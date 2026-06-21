@@ -145,6 +145,21 @@ textarea:focus, select:focus, input[type="text"]:focus { outline: none; border-c
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
 @media (max-width: 1000px) { .grid2 { grid-template-columns: 1fr; } }
 
+/* ---- A/B pipeline animation ---- */
+.pipeline { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 18px 0; background: var(--surface); box-shadow: var(--shadow); }
+.pipehead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 9px; }
+.psteps { display: flex; flex-direction: column; gap: 2px; }
+.pstep { display: flex; align-items: flex-start; gap: 12px; padding: 9px 10px; border-radius: 8px; opacity: 0.38; transition: opacity 0.35s ease, background 0.35s ease; }
+.pstep.active { opacity: 1; background: var(--accent-soft); }
+.pstep.done { opacity: 1; }
+.pnum { font-family: var(--font-mono); font-size: 12px; width: 22px; height: 22px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--sunken); color: var(--ink-muted); border: 1px solid var(--border); }
+.pstep.active .pnum, .pstep.done .pnum { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pbody { flex: 1; min-width: 0; }
+.plabel { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.pdetail { font-size: 12px; color: var(--ink-muted); font-family: var(--font-mono); margin-top: 3px; }
+.pchips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 11px; font-family: var(--font-mono); color: var(--accent); background: var(--accent-soft); border: 1px solid #cfe6df; padding: 2px 8px; border-radius: 999px; }
+
 /* ---- toast / spinner ---- */
 .toast { background: #fbeae7; border: 1px solid #f0cfca; color: #7c2820; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
 .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 8px; }

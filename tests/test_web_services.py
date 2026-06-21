@@ -71,6 +71,11 @@ def test_run_ab_real_token_split():
     assert out["saved_tokens"] > 0 and out["saved_pct"] > 0
     assert out["without"]["answer"] and out["raven"]["answer"]
     assert out["raven"]["context"].startswith("RELEVANT NOTES")
+    tr = out["trace"]
+    assert tr["total_facts"] > 0 and tr["dropped"] >= 0
+    assert tr["kept"] and all(k["reason"] in {"guard", "relevant"} for k in tr["kept"])
+    guarded = {k["type"] for k in tr["kept"] if k["reason"] == "guard"}
+    assert {"dietary", "permission"} & guarded     # standing rules were guarded, not dropped
 
 
 def test_compress_service():

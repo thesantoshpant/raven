@@ -290,13 +290,57 @@ function CompressBox({ roles }) {
   );
 }
 
+const AB_STEPS = ["Atomize memory", "Rank by your prompt", "Guard standing rules", "Drop irrelevant", "Build passport"];
+const GUARD_LABEL = { dietary: "dietary rule", permission: "confirm-before-pay", budget_limit: "budget cap", availability: "schedule" };
+
+function Pipeline({ running, step, out, memCount }) {
+  const tr = out?.trace;
+  const kept = tr?.kept || [];
+  const guards = kept.filter((k) => k.reason === "guard");
+  const detail = (i) => {
+    if (!tr) return null;
+    if (i === 0) return `${memCount} notes → ${tr.total_facts} facts`;
+    if (i === 1) return `by relevance to: "${out.prompt}"`;
+    if (i === 3) return `${tr.dropped} of ${tr.total_facts} facts dropped as irrelevant`;
+    if (i === 4) return `${kept.length} facts → ${out.raven.input_tokens.toLocaleString()} input tokens`;
+    return null;
+  };
+  return (
+    <div className="pipeline">
+      <div className="pipehead">
+        What RAVEN did to your memory
+        {running && <span className="spinner" style={{ borderColor: "rgba(15,110,92,.35)", borderTopColor: "var(--accent)" }} />}
+      </div>
+      <div className="psteps">
+        {AB_STEPS.map((label, i) => {
+          const state = out ? "done" : i < step ? "done" : i === step ? "active" : "";
+          return (
+            <div key={i} className={"pstep " + state}>
+              <span className="pnum">{i + 1}</span>
+              <div className="pbody">
+                <div className="plabel">{label}{i === 2 ? " 🔒" : ""}</div>
+                {out && i === 2 ? (
+                  <div className="pchips">
+                    {guards.map((g, k) => <span key={k} className="chip">🔒 {GUARD_LABEL[g.type] || g.type}</span>)}
+                  </div>
+                ) : detail(i) ? <div className="pdetail">{detail(i)}</div> : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ABCompare({ scenario }) {
   const [memory, setMemory] = useState("");
   const [prompt, setPrompt] = useState(
     "Where and when should we book Friday dinner with Maya, and do you need my OK before paying?"
   );
   const [out, setOut] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [step, setStep] = useState(0);
   const [err, setErr] = useState(null);
   const initRef = useRef(false);
 
@@ -307,11 +351,22 @@ function ABCompare({ scenario }) {
     }
   }, [scenario]);
 
+  // advance the pipeline steps 0->5 while the live call is in flight
+  useEffect(() => {
+    if (!running || step >= AB_STEPS.length) return;
+    const t = setTimeout(() => setStep((s) => s + 1), 620);
+    return () => clearTimeout(t);
+  }, [running, step]);
+
   const run = async () => {
-    setLoading(true); setErr(null);
-    try { setOut(await api.ab({ prompt, memory })); }
-    catch (e) { setErr(e.message || "request failed"); }
-    finally { setLoading(false); }
+    setErr(null); setOut(null); setStep(0); setRunning(true);
+    const t0 = Date.now();
+    let resp;
+    try { resp = await api.ab({ prompt, memory }); }
+    catch (e) { setErr(e.message || "request failed"); setRunning(false); return; }
+    const wait = 3300 - (Date.now() - t0);  // let the steps play fully even if the call is fast
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    setStep(AB_STEPS.length); setOut(resp); setRunning(false);
   };
 
   return (
@@ -326,13 +381,17 @@ function ABCompare({ scenario }) {
       <textarea value={memory} onChange={(e) => setMemory(e.target.value)} style={{ minHeight: 90 }} />
       <div className="muted" style={{ margin: "12px 0 6px" }}>Prompt — sent to both</div>
       <div style={{ display: "flex", gap: 10 }}>
-        <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !loading) run(); }} />
-        <button className="btn" style={{ width: "auto", padding: "11px 18px", whiteSpace: "nowrap" }} onClick={run} disabled={loading}>
-          {loading ? <><span className="spinner" />asking both…</> : "Send to both (live)"}
+        <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={running}
+          onKeyDown={(e) => { if (e.key === "Enter" && !running) run(); }} />
+        <button className="btn" style={{ width: "auto", padding: "11px 18px", whiteSpace: "nowrap" }} onClick={run} disabled={running}>
+          {running ? <><span className="spinner" />asking both…</> : "Send to both (live)"}
         </button>
       </div>
       {err && <div className="toast">⚠ {err}</div>}
+
+      {(running || out) && (
+        <Pipeline running={running} step={step} out={out} memCount={(scenario?.memory_items || []).length} />
+      )}
 
       {out && (
         <>
