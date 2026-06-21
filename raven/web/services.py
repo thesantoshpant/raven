@@ -18,6 +18,8 @@ from ..compress import build_passport, render_passport
 from ..handlers import handle_compress_request
 from ..ingest import ingest_corpus, load_corpus
 from ..llm import BaseLLM
+from ..relay import facts_from_text
+from ..retrieve import rank_facts
 from ..roles import ROLE_ORDER
 from ..score import score_structured
 from ..tokens import count_tokens
@@ -163,6 +165,48 @@ def relay_demo() -> dict:
         "preservation": {"probe": probe, "relay_keeps": relay_keeps,
                          "last_keeps": last_keeps, "hops": len(hops)},
     }
+
+
+_AB_SYS = (
+    "You are a helpful personal assistant. Answer the user's question using ONLY the provided "
+    "context. Be concise (2-4 sentences). If the context lacks the answer, say so."
+)
+
+
+def _raven_context_for_prompt(memory_text: str, prompt: str, max_facts: int = 14) -> str:
+    """RAVEN for a single assistant: atomize the memory and keep only the facts relevant to
+    THIS prompt (query-aware, recipient = this request). Returns a compact rendered context."""
+    facts = facts_from_text(memory_text)
+    ranked = rank_facts(facts, prompt, allowed_types=None)
+    chosen = [f for s, f in ranked if s > 0][:max_facts] or [f for _, f in ranked[:5]]
+    seen, lines = set(), []
+    for f in chosen:
+        if f.text not in seen:
+            seen.add(f.text)
+            lines.append(f.text)
+    return "RELEVANT NOTES:\n" + "\n".join(f"- {t}" for t in lines)
+
+
+def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict:
+    """A/B: answer the SAME prompt twice over the SAME memory -- once with the FULL memory in
+    context, once with only RAVEN's prompt-relevant compressed context. Token counts are the
+    model's REAL input usage (the authoritative, judge-proof number)."""
+    if not memory_text or not memory_text.strip():
+        corpus, _, _ = _load()
+        memory_text = serialize_corpus(corpus)
+    full_ctx = memory_text.strip()
+    raven_ctx = _raven_context_for_prompt(memory_text, prompt)
+
+    def ask(ctx: str) -> dict:
+        r = llm.complete(_AB_SYS, f"CONTEXT:\n{ctx}\n\nQUESTION: {prompt}", max_tokens=300)
+        return {"answer": r.text, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens}
+
+    without = ask(full_ctx)
+    raven = ask(raven_ctx)
+    raven["context"] = raven_ctx
+    saved = without["input_tokens"] - raven["input_tokens"]
+    pct = round(saved / without["input_tokens"] * 100, 1) if without["input_tokens"] else 0.0
+    return {"prompt": prompt, "without": without, "raven": raven, "saved_tokens": saved, "saved_pct": pct}
 
 
 def run_benchmark(llm: BaseLLM) -> dict:

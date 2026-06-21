@@ -139,9 +139,11 @@ table.relay tr.total td { font-weight: 600; border-top: 2px solid var(--border);
 .badge.bad { color: var(--dropped); background: #fbeae7; border: 1px solid #f0cfca; }
 
 /* ---- inputs ---- */
-textarea, select { width: 100%; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 11px; font-size: 13px; font-family: var(--font-sans); }
+textarea, select, input[type="text"] { width: 100%; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 11px; font-size: 13px; font-family: var(--font-sans); }
 textarea { min-height: 130px; resize: vertical; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
-textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+textarea:focus, select:focus, input[type="text"]:focus { outline: none; border-color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 1000px) { .grid2 { grid-template-columns: 1fr; } }
 
 /* ---- toast / spinner ---- */
 .toast { background: #fbeae7; border: 1px solid #f0cfca; color: #7c2820; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }

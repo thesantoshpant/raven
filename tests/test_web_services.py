@@ -62,6 +62,17 @@ def test_ingest_document_adds_items_and_recomputes_passports():
     assert any(r["role"] == "budget" for r in out["passports"]["roles"])
 
 
+def test_run_ab_real_token_split():
+    # FakeLLM derives input_tokens from context length, so RAVEN's compressed context
+    # must produce strictly fewer input tokens than the full memory, with positive savings.
+    llm = FakeLLM(lambda s, u: "Book Green Bowl at 7pm; I'll confirm before paying.")
+    out = services.run_ab(llm, "where and when should we eat friday?")
+    assert out["without"]["input_tokens"] > out["raven"]["input_tokens"]
+    assert out["saved_tokens"] > 0 and out["saved_pct"] > 0
+    assert out["without"]["answer"] and out["raven"]["answer"]
+    assert out["raven"]["context"].startswith("RELEVANT NOTES")
+
+
 def test_compress_service():
     out = services.compress(
         "budget", "plan dinner",

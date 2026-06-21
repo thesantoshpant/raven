@@ -27,6 +27,7 @@ export const api = {
   relay: () => get("/api/relay"),
   benchmark: () => post("/api/benchmark"),
   compress: (b) => post("/api/compress", b),
+  ab: (b) => post("/api/ab", b),
   ingest: async (file) => {
     const fd = new FormData();
     fd.append("file", file);

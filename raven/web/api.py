@@ -20,6 +20,8 @@ from . import services
 # refresh/mash loop from burning quota; the disk cache makes warmed calls free anyway.
 _BENCH_COOLDOWN_S = 2.0
 _last_benchmark = 0.0
+_AB_COOLDOWN_S = 2.0
+_last_ab = 0.0
 
 app = FastAPI(title="RAVEN demo API", version="0.4.0")
 app.add_middleware(
@@ -80,6 +82,28 @@ async def ingest(file: UploadFile = File(...)):
         return services.ingest_document(bytes(buf), file.filename or "upload")
     except RuntimeError as exc:  # markitdown missing / unsupported format
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+class ABReq(BaseModel):
+    prompt: str = Field(max_length=2000)
+    memory: str = Field(default="", max_length=50_000)
+
+
+@app.post("/api/ab")
+def ab(req: ABReq):
+    """LIVE A/B: answer the same prompt with full memory vs RAVEN passport; 2 billed calls."""
+    global _last_ab
+    now = time.monotonic()
+    if now - _last_ab < _AB_COOLDOWN_S:
+        raise HTTPException(status_code=429, detail="Rate-limited: A/B makes 2 live API calls; wait a moment.")
+    _last_ab = now
+    if not req.prompt.strip():
+        raise HTTPException(status_code=400, detail="Enter a prompt to send to both bots.")
+    llm = AnthropicLLM(model=DEFAULT_MODEL)
+    try:
+        return services.run_ab(llm, req.prompt, req.memory or None)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=f"LLM error: {exc}")
 
 
 @app.post("/api/benchmark")

@@ -277,6 +277,86 @@ function CompressBox({ roles }) {
   );
 }
 
+function ABCompare({ scenario }) {
+  const [memory, setMemory] = useState("");
+  const [prompt, setPrompt] = useState(
+    "Where and when should we book Friday dinner with Maya, and do you need my OK before paying?"
+  );
+  const [out, setOut] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+  const initRef = useRef(false);
+
+  useEffect(() => {
+    if (scenario && !initRef.current) {
+      initRef.current = true;
+      setMemory((scenario.memory_items || []).map((it) => it.text).join(" "));
+    }
+  }, [scenario]);
+
+  const run = async () => {
+    setLoading(true); setErr(null);
+    try { setOut(await api.ab({ prompt, memory })); }
+    catch (e) { setErr(e.message || "request failed"); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div>
+      <h1 className="bighead">A/B — with vs without RAVEN</h1>
+      <p className="subhead">
+        Same prompt, same memory, same model. <b>Left</b> sends the FULL memory in context;
+        <b> right</b> sends only RAVEN&apos;s prompt-relevant passport. The token counts are the
+        model&apos;s <b>real input usage</b> (live, billed Claude calls).
+      </p>
+      <div className="muted" style={{ marginBottom: 6 }}>Shared memory (editable)</div>
+      <textarea value={memory} onChange={(e) => setMemory(e.target.value)} style={{ minHeight: 90 }} />
+      <div className="muted" style={{ margin: "12px 0 6px" }}>Prompt — sent to both</div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <input type="text" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !loading) run(); }} />
+        <button className="btn" style={{ width: "auto", padding: "11px 18px", whiteSpace: "nowrap" }} onClick={run} disabled={loading}>
+          {loading ? <><span className="spinner" />asking both…</> : "Send to both (live)"}
+        </button>
+      </div>
+      {err && <div className="toast">⚠ {err}</div>}
+
+      {out && (
+        <>
+          <div className="impact" style={{ marginTop: 18 }}>
+            <div>
+              <div className="lbl">Input tokens saved</div>
+              <div className="big">{out.saved_tokens.toLocaleString()}</div>
+              <div className="muted">real Claude input tokens (this prompt)</div>
+            </div>
+            <div className="side"><span className="bigstat good">{out.saved_pct}%</span><br />fewer input tokens with RAVEN</div>
+          </div>
+          <div className="grid2">
+            <div className="panel">
+              <h2>Without RAVEN <span className="count">{out.without.input_tokens.toLocaleString()} in-tok</span></h2>
+              <div className="muted" style={{ marginBottom: 10 }}>full memory in context</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{out.without.answer}</div>
+            </div>
+            <div className="panel" style={{ borderColor: "var(--accent)" }}>
+              <h2>RAVEN <span className="count">{out.raven.input_tokens.toLocaleString()} in-tok</span></h2>
+              <div className="muted" style={{ marginBottom: 10 }}>compressed passport in context</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{out.raven.answer}</div>
+              <details style={{ marginTop: 12 }}>
+                <summary className="muted" style={{ cursor: "pointer" }}>show the passport RAVEN sent</summary>
+                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: 12, background: "var(--sunken)", border: "1px solid var(--border)", borderRadius: 8, padding: 10, marginTop: 6 }}>{out.raven.context}</pre>
+              </details>
+            </div>
+          </div>
+          <div className="note">
+            Both columns use the same model, system prompt, and question — only the context differs
+            (full memory vs RAVEN passport). Tokens are the model&apos;s real input usage; calls are live + billed.
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const [tab, setTab] = useState("dashboard");
   const [scenario, setScenario] = useState(null);
@@ -327,9 +407,9 @@ export default function Home() {
       </header>
 
       <div className="tabs">
-        {["dashboard", "relay", "compress"].map((t) => (
+        {["dashboard", "ab", "relay", "compress"].map((t) => (
           <button key={t} className={"tab" + (tab === t ? " active" : "")} onClick={() => setTab(t)}>
-            {t === "dashboard" ? "Dashboard" : t === "relay" ? "RELAY (agent→agent)" : "Compress anything"}
+            {t === "dashboard" ? "Dashboard" : t === "ab" ? "A/B compare" : t === "relay" ? "RELAY (agent→agent)" : "Compress anything"}
           </button>
         ))}
       </div>
@@ -351,6 +431,7 @@ export default function Home() {
         </div>
       )}
 
+      {tab === "ab" && <ABCompare scenario={scenario} />}
       {tab === "relay" && <RelayView relay={relay} error={rErr} />}
       {tab === "compress" && <CompressBox roles={scenario?.roles} />}
 
