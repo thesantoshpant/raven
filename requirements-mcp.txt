@@ -1,0 +1,5 @@
+# OPTIONAL -- only needed to run the RAVEN MCP server (raven/mcp/server.py) so RAVEN works as a
+# tool inside Claude Desktop / Claude Code / Cursor. NOT needed by the core engine, gate, M2/M3
+# benches, web app, Fetch agent, or pytest.
+#   pip install -r requirements-mcp.txt
+mcp>=1.0

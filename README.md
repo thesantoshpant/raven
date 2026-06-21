@@ -142,6 +142,19 @@ with passports recomputed live (`POST /api/ingest`, the upload control in the Me
 `raven/ingest_docs.py`). `markitdown` is optional (`requirements-docs.txt`); `.md`/`.txt`
 work without it, and the test suite never imports it.
 
+## Use it inside Claude (MCP)
+RAVEN also ships as a **Model Context Protocol** server, so the same engine works as a tool inside
+**Claude Desktop / Claude Code / Cursor** — no API key, no LLM calls (the host model is the LLM;
+RAVEN returns a compressed passport). Tools: `compress_memory`, `relay_handoff`, `list_roles`.
+```
+pip install -r requirements-mcp.txt
+python -m raven.mcp.smoke        # verify in-process (lists tools + a real call)
+python -m raven.mcp.server       # stdio server for an MCP client
+```
+Config + examples: `raven/mcp/README.md`. The MCP server is the sole `mcp` importer
+(`raven/mcp/server.py`); the pure logic (`raven/mcp/_logic.py`) is offline-tested and never
+imports the SDK.
+
 ## What's next (post-hackathon)
 - A hosted Agentverse deployment; embeddings retrieval; more scenarios for a quality *rate*
   (not just an existence proof); KV-cache-level relay; bump Next.js for public hosting.
