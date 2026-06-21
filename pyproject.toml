@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+# Makes `raven` importable and tests runnable from ANY directory (not just repo root),
+# which the root conftest.py shim alone did not guarantee.
+pythonpath = ["."]
+testpaths = ["tests"]

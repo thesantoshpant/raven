@@ -1,0 +1,9 @@
+# --- M1 core: stdlib only, nothing required to run the gate ---
+# Tests + benchmark run with ZERO of the below installed (pure stdlib path).
+#
+# Optional upgrades (install for nicer numbers; the gate never depends on them):
+#   pip install tiktoken      # exact GPT-family token counts (downloads encoding once)
+#   pip install fastembed     # ONNX embeddings, no torch (downloads a model once)
+#
+# Dev:
+pytest>=8,<10

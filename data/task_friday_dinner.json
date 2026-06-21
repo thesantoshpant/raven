@@ -1,0 +1,19 @@
+{
+  "task_id": "plan_friday_dinner",
+  "request": "Plan a Friday dinner with Maya. Keep it under $40, somewhere quiet (no loud places), book it only if it fits my calendar, and confirm with me before paying.",
+  "roles": ["restaurant", "calendar", "budget", "writer"],
+  "gold_constraints": [
+    {"id": "vegetarian", "type": "must_include_any", "any": ["vegetarian", "veggie", "vegan", "plant-based", "tofu", "no meat"]},
+    {"id": "budget_under_40", "type": "max_dollar", "value": 40},
+    {"id": "after_6pm", "type": "time_after", "hour": 18},
+    {"id": "not_loud", "type": "must_not_include_any", "any": ["loud bar", "noisy bar", "nightclub", "rowdy", "deafening"]},
+    {"id": "confirm_before_pay", "type": "must_include_any", "any": ["confirm", "await your approval", "ask you before", "before paying", "before i pay"]}
+  ],
+  "gold_fact_probes": {
+    "vegetarian": "vegetarian",
+    "budget_under_40": "under $40",
+    "after_6pm": "free after 7",
+    "not_loud": "loud",
+    "confirm_before_pay": "confirm before paying"
+  }
+}
