@@ -1,0 +1,5 @@
+# OPTIONAL deps for the M4 demo backend (FastAPI). NOT needed by the core, the gate,
+# M2/M3, or the pytest suite -- raven/web/services.py is tested offline with FakeLLM and
+# raven/web/api.py (the only fastapi importer) is never imported by pytest.
+fastapi>=0.110
+uvicorn[standard]>=0.27

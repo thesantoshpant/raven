@@ -13,3 +13,8 @@ private_keys.json
 *_data.json
 build/
 dist/
+# Next.js frontend (M4 demo UI)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local

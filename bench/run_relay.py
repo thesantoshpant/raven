@@ -20,6 +20,7 @@ Run from the repo root:  python bench/run_relay.py
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 
@@ -30,7 +31,6 @@ from raven.baselines import serialize_corpus  # noqa: E402
 from raven.relay import build_relay_handoff  # noqa: E402
 
 DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-TASK = "plan a friday dinner with maya"
 
 RESTAURANT_OUT = (
     "After reviewing the candidate venues and the user's notes, I recommend Green Bowl, "
@@ -51,6 +51,9 @@ BACKCTX_PROBE = "vegetarian"
 
 def main():
     corpus = load_corpus(os.path.join(DATA, "corpus_friday_dinner.json"))
+    with open(os.path.join(DATA, "task_friday_dinner.json"), encoding="utf-8") as fh:
+        taskj = json.load(fh)
+    task = taskj.get("request_m2", taskj["request"])
     memory = serialize_corpus(corpus)
 
     # (to_role, prior_context_so_far, latest_upstream_message)
@@ -69,7 +72,7 @@ def main():
     relay_keeps = last_keeps = 0
     for to_role, prior, msg in hops:
         # The real handoff API: latest message verbatim (floor) + compressed back-context.
-        h = build_relay_handoff(prior, msg, TASK, to_role, backend="fallback")
+        h = build_relay_handoff(prior, msg, task, to_role, backend="fallback")
         tot_full += h.raw_tokens
         tot_last += h.last_message_tokens
         tot_relay += h.relayed_tokens

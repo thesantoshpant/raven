@@ -88,10 +88,10 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   |---|---|---|
   | full_transcript (naive) | 8560 | yes, but huge |
   | last_message only | 183 | 1/3 hops (drops standing rules) |
-  | **RAVEN RELAY** | 689 | **3/3 hops** |
+  | **RAVEN RELAY** | 751 | **3/3 hops** |
 
   RELAY costs a little more than last-message-only but **preserves the standing back-context
-  constraints last-message silently drops**, at ~92% below the full-transcript broadcast.
+  constraints last-message silently drops**, at ~91% below the full-transcript broadcast.
   Savings are scale-driven (a passport has ~25–30 tok of fixed structure).
 - **Fetch.ai (layered).** `raven/fetch/raven_agent.py` is a Chat-Protocol uAgent
   (mailbox → Agentverse → ASI:One discovery); `raven/fetch/bureau_demo.py` runs a local
@@ -107,6 +107,31 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
 The Fetch layer (`uagents`, `redis`) is **optional** (`requirements-fetch.txt`); the core, the
 gate, M2, and the **74-test** suite stay stdlib + offline (no `uagents`/`redis`/network).
 
+## Milestone 4 (done): the live demo UI
+A two-server app — a FastAPI backend (`raven/web/`) over the M1–M3 engine + a Next.js
+dashboard (`frontend/`):
+
+- **Dashboard** — three panes: the messy **user memory** (the 5 gold facts highlighted),
+  the **agents + their recipient-aware passports** (click an agent to see what it sees /
+  is denied), and a **token meter + live decision benchmark** ("Run benchmark" → raw 5/5,
+  generic 4/5 ✗confirm, RAVEN 5/5).
+- **RELAY tab** — the agent→agent handoff table (full / last-message / RAVEN) + the
+  back-context preservation check (3/3 vs 1/3).
+- **Compress-anything tab** — paste a memory blob, pick a role, get its passport live.
+
+Only `/api/benchmark` calls the real API (disk-cached → instant once warmed); every live
+call has loading + error states. The backend deps (`fastapi`, `uvicorn`) are optional
+(`requirements-web.txt`); `raven/web/services.py` is tested offline with `FakeLLM` and the
+test suite never imports fastapi.
+
+```
+.venv\Scripts\python -m pip install -r requirements-web.txt
+.venv\Scripts\python -m uvicorn raven.web.api:app --port 8000     # backend :8000
+cd frontend && npm install && npm run dev                          # UI :3000  -> open it
+```
+Warm the cache first (click "Run benchmark" once) so the stage run is instant. `/api/benchmark`
+is server-side cooldown'd to avoid accidental live spend. Next 14.2.15 carries dev-server
+advisories that don't apply to this local, no-middleware demo; bump post-event if desired.
+
 ## Roadmap
-- **M4** demo UI (three-pane split-screen, token/$ meters, privacy view).
 - **M5** MarkItDown PDF→MD ingestion + polish.
