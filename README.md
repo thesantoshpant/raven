@@ -88,10 +88,10 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   |---|---|---|
   | full_transcript (naive) | 8560 | yes, but huge |
   | last_message only | 183 | 1/3 hops (drops standing rules) |
-  | **RAVEN RELAY** | 771 | **3/3 hops** |
+  | **RAVEN RELAY** | 689 | **3/3 hops** |
 
   RELAY costs a little more than last-message-only but **preserves the standing back-context
-  constraints last-message silently drops**, at ~91% below the full-transcript broadcast.
+  constraints last-message silently drops**, at ~92% below the full-transcript broadcast.
   Savings are scale-driven (a passport has ~25–30 tok of fixed structure).
 - **Fetch.ai (layered).** `raven/fetch/raven_agent.py` is a Chat-Protocol uAgent
   (mailbox → Agentverse → ASI:One discovery); `raven/fetch/bureau_demo.py` runs a local
@@ -105,7 +105,7 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   passport (a cap that mentions spending, e.g. "budget is $40 but I spent $60", stays a cap).
 
 The Fetch layer (`uagents`, `redis`) is **optional** (`requirements-fetch.txt`); the core, the
-gate, M2, and the **66-test** suite stay stdlib + offline (no `uagents`/`redis`/network).
+gate, M2, and the **74-test** suite stay stdlib + offline (no `uagents`/`redis`/network).
 
 ## Roadmap
 - **M4** demo UI (three-pane split-screen, token/$ meters, privacy view).

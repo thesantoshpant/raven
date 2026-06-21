@@ -38,10 +38,25 @@ def facts_from_text(text: str, source_ref: str = "upstream") -> List[Fact]:
     return out
 
 
+def _raw_input_text(context_text: str, prior_facts: Optional[List[Fact]]) -> str:
+    """The ORIGINAL input a naive forward would send. Each unique sentence is counted
+    ONCE -- multi-label atomization (one sentence -> several typed facts) must never
+    inflate the raw baseline."""
+    parts: List[str] = []
+    seen = set()
+    for f in (prior_facts or []):
+        if f.text not in seen:
+            seen.add(f.text)
+            parts.append(f.text)
+    if context_text and context_text.strip():
+        parts.append(context_text.strip())
+    return "\n".join(parts)
+
+
 @dataclass
 class RelayResult:
     passport_text: str
-    raw_tokens: int       # forwarding the whole context blob
+    raw_tokens: int       # forwarding the whole context blob (original input, deduped)
     relayed_tokens: int   # the compressed recipient-aware passport
     saved_tokens: int
     saved_pct: float
@@ -57,7 +72,7 @@ def build_relay_passport(
 ) -> RelayResult:
     """Compress a context blob into a recipient-aware passport for `to_role`."""
     facts = list(prior_facts or []) + facts_from_text(context_text)
-    raw_tokens = count_tokens("\n".join(f.text for f in facts), backend=backend)
+    raw_tokens = count_tokens(_raw_input_text(context_text, prior_facts), backend=backend)
 
     passport = build_passport(facts, task, to_role)
     by_id = {f.fact_id: f for f in facts}
@@ -92,7 +107,8 @@ def build_relay_handoff(
     msg = (latest_message or "").strip()
     prior_facts = facts_from_text(prior_context, source_ref="prior")
 
-    raw_text = "\n".join(f.text for f in prior_facts)
+    # raw = the ORIGINAL prior text + the message, NOT the multi-label-expanded facts.
+    raw_text = (prior_context or "").strip()
     if msg:
         raw_text = (raw_text + "\n" + msg).strip()
     raw_tokens = count_tokens(raw_text, backend=backend)

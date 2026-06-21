@@ -38,6 +38,26 @@ def test_relay_fact_ids_are_globally_unique_across_calls():
     assert a[0].fact_id != b[0].fact_id
 
 
+def test_raw_tokens_not_inflated_by_multilabel_expansion():
+    # A combined sentence expands to several facts internally, but the RAW baseline must
+    # reflect the ORIGINAL input (counted once), not the duplicated expansion.
+    from raven.tokens import count_tokens
+
+    text = "Maya is vegetarian and keep dinner under $40 and always confirm before paying."
+    res = build_relay_passport(text, "plan dinner", "budget")
+    assert res.raw_tokens == count_tokens(text, backend="fallback")
+
+
+def test_handoff_raw_tokens_match_original_input():
+    from raven.relay import build_relay_handoff
+    from raven.tokens import count_tokens
+
+    prior = "Maya is vegetarian and keep dinner under $40 and confirm before paying."
+    msg = "I recommend Green Bowl."
+    h = build_relay_handoff(prior, msg, "plan", "budget")
+    assert h.raw_tokens == count_tokens((prior + "\n" + msg).strip(), backend="fallback")
+
+
 def test_facts_from_text_multilabel_combined_sentence():
     facts = facts_from_text("Maya is vegetarian and keep dinner under $40 and confirm before paying.")
     types = {f.type for f in facts}
