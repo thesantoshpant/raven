@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from typing import List, Optional
 
 from ..agents import aggregate, run_budget_agent, run_calendar_agent, run_restaurant_agent
@@ -168,18 +169,23 @@ def relay_demo() -> dict:
 
 
 _AB_SYS = (
-    "You are a helpful personal assistant. Answer the user's question using ONLY the provided "
-    "context. Be concise (2-4 sentences). If the context lacks the answer, say so."
+    "You are a helpful personal assistant. Answer the user's question using ONLY the facts in the "
+    "provided context. Do NOT invent or embellish details that are not stated (for example, never "
+    "add 'per person', prices, names, or times that are not in the context). Be concise (2-4 "
+    "sentences). If the context lacks the answer, say so."
 )
 
+_AB_GUARD_TYPES = ("dietary", "permission", "budget_limit")      # standing rules: ALWAYS keep
+_AB_CONTEXT_TYPES = ("availability", "location", "preference")   # planning context: keep best relevant one each
 
-_AB_GUARD_TYPES = ("dietary", "permission", "budget_limit")  # standing rules: ALWAYS keep
 
-
-def _raven_select(memory_text: str, prompt: str, max_facts: int = 8):
-    """RAVEN selection for a single assistant. GUARD the standing-rule facts (so a constraint
-    like 'confirm before paying' is never dropped even if it doesn't lexically match the prompt),
-    then fill with the top query-relevant facts (a relevance floor drops common-word noise).
+def _raven_select(memory_text: str, prompt: str, max_facts: int = 10):
+    """RAVEN selection for a personal-assistant recipient:
+      1) GUARD the standing-rule facts (dietary/permission/budget) so a constraint like 'confirm
+         before paying' is never dropped, even if it doesn't lexically match the prompt;
+      2) keep the best query-relevant fact of each planning-context type (schedule/location/
+         preference) so the answer stays concrete (the venue, the time, the vibe);
+      3) fill the rest with the top query-relevant facts; a relevance floor drops common-word noise.
     Returns (all_facts, chosen) where chosen = [(fact, reason)], reason in {'guard','relevant'}."""
     facts = facts_from_text(memory_text)
     ranked = rank_facts(facts, prompt, allowed_types=None)  # (score, fact) desc; ALL facts
@@ -190,13 +196,18 @@ def _raven_select(memory_text: str, prompt: str, max_facts: int = 8):
             seen.add(f.text)
             chosen.append((f, reason))
 
-    for t in _AB_GUARD_TYPES:  # 1) guard: best-ranked fact of each standing-rule type
+    for t in _AB_GUARD_TYPES:  # 1) hard guard: best-ranked fact of each standing-rule type
         for _, f in ranked:
             if f.type == t:
                 add(f, "guard")
                 break
+    for t in _AB_CONTEXT_TYPES:  # 2) soft guard: best QUERY-RELEVANT fact of each context type
+        for s, f in ranked:
+            if f.type == t and s > 0:
+                add(f, "relevant")
+                break
     floor = ranked[0][0] * 0.25 if (ranked and ranked[0][0] > 0) else 0.0
-    for s, f in ranked:  # 2) fill with top query-relevant facts (floor drops noise)
+    for s, f in ranked:  # 3) fill with the top remaining query-relevant facts (floor drops noise)
         if len(chosen) >= max_facts:
             break
         if s > 0 and s >= floor:
@@ -227,8 +238,10 @@ def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict
         r = llm.complete(_AB_SYS, f"CONTEXT:\n{ctx}\n\nQUESTION: {prompt}", max_tokens=300)
         return {"answer": r.text, "input_tokens": r.input_tokens, "output_tokens": r.output_tokens}
 
+    t0 = time.perf_counter()
     without = ask(full_ctx)
     raven = ask(raven_ctx)
+    elapsed = round(time.perf_counter() - t0, 2)  # ~0s => served from disk cache; >0.5s => live
     raven["context"] = raven_ctx
     saved = without["input_tokens"] - raven["input_tokens"]
     pct = round(saved / without["input_tokens"] * 100, 1) if without["input_tokens"] else 0.0
@@ -237,8 +250,8 @@ def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict
         "kept": [{"text": f.text, "type": f.type, "reason": r} for f, r in chosen],
         "dropped": len(all_facts) - len(chosen),
     }
-    return {"prompt": prompt, "without": without, "raven": raven,
-            "saved_tokens": saved, "saved_pct": pct, "trace": trace}
+    return {"prompt": prompt, "without": without, "raven": raven, "saved_tokens": saved,
+            "saved_pct": pct, "trace": trace, "elapsed_s": elapsed, "cached": elapsed < 0.5}
 
 
 def run_benchmark(llm: BaseLLM) -> dict:

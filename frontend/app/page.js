@@ -310,6 +310,7 @@ function Pipeline({ running, step, out, memCount }) {
       <div className="pipehead">
         What RAVEN did to your memory
         {running && <span className="spinner" style={{ borderColor: "rgba(15,110,92,.35)", borderTopColor: "var(--accent)" }} />}
+        {out && <span className="chip" style={{ marginLeft: "auto" }}>{out.cached ? "cached · instant" : `live · ${out.elapsed_s}s`}</span>}
       </div>
       <div className="psteps">
         {AB_STEPS.map((label, i) => {
