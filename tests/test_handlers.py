@@ -65,6 +65,29 @@ def test_plain_text_no_markers_is_memory_for_writer():
     assert stats["facts"] >= 1 and "$40" in reply
 
 
+def test_pipe_delimited_format_no_separator_leak():
+    # the exact format _HELP advertises -- pipes must not leak into task/memory.
+    reply, stats = handle_compress_request(
+        "role: budget | task: plan a friday dinner | memory: Maya is vegetarian. "
+        "Keep dinners under $40. Always confirm before paying."
+    )
+    assert stats["ok"] is True and stats["role"] == "budget"
+    assert "(task: plan a friday dinner)" in reply  # no trailing pipe in the task
+    assert "$40" in reply and "confirm" in reply.lower()
+    assert "| Maya" not in reply  # no leading pipe leaked into the first fact
+
+
+def test_role_with_trailing_punctuation_still_parses():
+    _, stats = handle_compress_request("role: budget. memory: Keep dinners under $40.")
+    assert stats["role"] == "budget"
+
+
+def test_prose_with_unknown_role_word_not_corrupted():
+    # "role: organizer" isn't a known role -> must NOT be excised; defaults to writer.
+    _, stats = handle_compress_request("I mentioned my role: organizer keeps everyone calm. Maya is vegetarian.")
+    assert stats["role"] == "writer"
+
+
 def test_combined_sentence_does_not_yield_empty_budget_passport():
     # Regression: a single combined sentence used to classify as ONE type (dietary) and
     # leave the budget passport empty while still claiming success.

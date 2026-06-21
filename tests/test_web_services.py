@@ -53,6 +53,15 @@ def test_run_benchmark_structure_offline():
     assert out["conditions"]["raw"]["agent_tokens"] > out["conditions"]["generic"]["agent_tokens"]
 
 
+def test_ingest_document_adds_items_and_recomputes_passports():
+    base = services.get_scenario()["counts"]["facts"]
+    out = services.ingest_document(b"My boss is vegan.\n\nKeep team lunches under $25.", "notes.txt")
+    assert out["added"] == 2
+    assert any("vegan" in it["text"] or "$25" in it["text"] for it in out["new_items"])
+    assert out["passports"]["n_facts"] > base                      # combined corpus
+    assert any(r["role"] == "budget" for r in out["passports"]["roles"])
+
+
 def test_compress_service():
     out = services.compress(
         "budget", "plan dinner",

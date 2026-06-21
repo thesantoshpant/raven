@@ -23,18 +23,22 @@ _HELP = (
 )
 
 _MAX_MEMORY_CHARS = 12_000  # cap pasted input so a huge blob can't block the agent loop
+_SEP = " |,\t\r\n"          # marker separators to strip from captured values
 _MENTION = re.compile(r"^\s*@\S+\s*")
-_ROLE = re.compile(r"\brole\s*[:=]\s*(\S+)", re.I)
-_TASK = re.compile(r"\btask\s*[:=]\s*(.+?)(?=\b(?:memory|role)\s*[:=]|$)", re.I | re.S)
+_ROLE = re.compile(r"\brole\s*[:=]\s*([A-Za-z]+)", re.I)          # letters only -> no trailing ./|/,
+_TASK = re.compile(r"\btask\s*[:=]\s*(.+?)(?=\s*[|,]?\s*\bmemory\s*[:=]|$)", re.I | re.S)
 _MEMORY = re.compile(r"\bmemory\s*[:=]\s*(.+)$", re.I | re.S)
+_DANGLING = re.compile(r"(?i)\b(?:role|task|memory)\s*[:=]\s*$")   # a marker with no value left
 
 
 def _parse(text: str) -> Tuple[str, str, str]:
-    """Return (role, task, memory). Robust to the way real chats arrive:
+    """Return (role, task, memory). Robust to how real chats arrive:
     - JSON {role,task,memory};
     - a leading @agent mention (ASI:One/Agentverse prepend it) is stripped;
-    - role/task/memory markers anywhere (single-line OR multi-line, ':' or '=');
-    - plain text with no markers -> the whole thing is memory (role defaults to writer)."""
+    - role/task/memory markers anywhere, ':'/'=', single- or multi-line, '|'/',' separated;
+    - plain text -> the whole thing is memory (role defaults to writer).
+    An invalid `role:` value is left in the memory rather than excised (so prose that merely
+    says 'my role: organizer ...' isn't corrupted)."""
     text = (text or "").strip()
     try:
         d = json.loads(text)
@@ -48,22 +52,24 @@ def _parse(text: str) -> Tuple[str, str, str]:
     role, task = "writer", "general task"
 
     rm = _ROLE.search(text)
-    if rm:  # remove the role marker regardless of validity; only SET role if known
-        if rm.group(1).lower() in ROLES:
-            role = rm.group(1).lower()
+    if rm and rm.group(1).lower() in ROLES:  # only consume a VALID role marker
+        role = rm.group(1).lower()
         text = text[:rm.start()] + " " + text[rm.end():]
 
     tm = _TASK.search(text)
     if tm:
-        task = tm.group(1).strip() or task
+        cand = tm.group(1).strip(_SEP)
+        if cand:
+            task = cand
         text = text[:tm.start()] + " " + text[tm.end():]
 
     mm = _MEMORY.search(text)
     if mm:
-        leftover = text[:mm.start()].strip()
-        memory = (leftover + " " + mm.group(1).strip()).strip() if leftover else mm.group(1).strip()
+        leftover = text[:mm.start()].strip(_SEP)
+        memval = mm.group(1).strip(_SEP)
+        memory = (leftover + " " + memval).strip() if leftover else memval
     else:
-        memory = text.strip()
+        memory = _DANGLING.sub("", text).strip(_SEP)  # drop a value-less trailing 'memory:'
     return role, task, " ".join(memory.split())
 
 

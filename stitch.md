@@ -134,7 +134,8 @@ with 1px border, radius 12. Stack to one column under ~1000px.
 - Sub-caption: "Raw: every agent gets all 127 facts (~2,758 tok). RAVEN: each gets only its slice."
 - A vertical list of 4 **agent cards** (roles: restaurant, calendar, budget, writer). Each card:
   - Row 1: role name (Inter 600, capitalized) on the left; on the right a small pill in
-    `accent`/`accent-soft` showing `211 tok · −93%` (mono).
+    `accent`/`accent-soft` showing `179 tok · −94%` (mono). (Numbers in §6 are illustrative;
+    the live UI computes them from the API.)
   - Row 2 (small, muted): `sees 6 facts · denied 121 · ~$0.0002/send`.
   - Cards are clickable/expandable. The **expanded** state reveals the passport (see component
     spec): a list of the kept facts (each with a small `type` tag) and a monospace passport block.
@@ -144,15 +145,15 @@ with 1px border, radius 12. Stack to one column under ~1000px.
 - Headline: `TOKEN METER · LIVE DECISION`.
 - **Token meter:** two horizontal bars to compare:
   - "Raw — full memory to all 4 agents": a full-width bar in a neutral/`dropped`-tinted fill, label `11,032 tok`.
-  - "RAVEN — tailored passports": a short bar (~7% width) in `accent`/`kept` fill, label `771 tok`.
+  - "RAVEN — tailored passports": a short bar (~7% width) in `accent`/`kept` fill, label `688 tok`.
   - Below: a big stat `93%` (mono, `kept` color) + caption "fewer context tokens delivered across the workflow".
 - **Live benchmark:** a primary button "▶ Run decision benchmark (live)". When loading, show a
   small spinner + "agents deciding…". Results render as 3 rows (a tiny table / list):
   | condition | score | tokens |
   |---|---|---|
   | raw (full) | **5/5** (kept color) | 8,308 tok · ~$0.02 |
-  | generic | **4/5** (dropped color) + "missed: confirm_before_pay" | 1,114 tok |
-  | **RAVEN** | **5/5** (kept color) | 1,030 tok |
+  | generic | **4/5** (dropped color) + "missed: confirm_before_pay" | 960 tok |
+  | **RAVEN** | **5/5** (kept color) | 1,022 tok |
   - The RAVEN row is subtly emphasized (1px `accent` left border or `accent-soft` tint).
   - Footnote (small, faint): "RAVEN matches raw's quality at a fraction of the recurring cost;
     generic, at the same per-agent budget, drops the standing 'confirm before paying' rule.
@@ -166,14 +167,14 @@ A single wide `surface` card.
 - A clean table (hairline row dividers, right-aligned numeric columns in mono):
   | hop | full transcript | last message | RAVEN relay | vs full |
   |---|---|---|---|---|
-  | → restaurant | 2,792 | 0 | 231 | 92% |
-  | → budget | 2,895 | 103 | 225 | 92% |
+  | → restaurant | 2,758 | 0 | 245 | 91% |
+  | → budget | 2,861 | 103 | 234 | 92% |
   | → writer | 2,941 | 80 | 310 | 89% |
   | **TOTAL** | **8,560** | **183** | **889** | **90%** |
 - Two badges below: a `kept` pill "RAVEN keeps 'vegetarian' on 3/3 hops" and a `dropped` pill
   "last-message keeps it on only 1/3".
 - Footnote (faint): "RAVEN costs a little more than last-message-only but preserves the standing
-  back-context constraints last-message silently drops — at 91% below the full-transcript
+  back-context constraints last-message silently drops — at ~90% below the full-transcript
   broadcast. Single illustrative scenario; savings are scale-driven."
 
 ### SCREEN 3 — Compress anything
