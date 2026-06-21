@@ -3,3 +3,4 @@
 # which the root conftest.py shim alone did not guarantee.
 pythonpath = ["."]
 testpaths = ["tests"]
+addopts = "-p no:cacheprovider"   # no .pytest_cache -> clean, professional output anywhere

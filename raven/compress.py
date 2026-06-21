@@ -37,22 +37,34 @@ def dedup_facts(facts: List[Fact]) -> List[Fact]:
     return out
 
 
-def build_passport(facts: List[Fact], task: str, role: str, top_k: int = 8) -> Passport:
+def build_passport(facts: List[Fact], task: str, role: str, top_k: int = 6) -> Passport:
     if role not in ROLES:
         raise KeyError(f"unknown role: {role}")
     spec = ROLES[role]
     query = task + " " + " ".join(spec["keywords"])
     ranked = rank_facts(facts, query, allowed_types=spec["types"])
 
-    chosen: List[Fact] = [f for _, f in ranked[:top_k]]
+    # Only keep facts with positive query relevance (drops zero-overlap distractors
+    # like a $65 concert in the budget passport), then take the top_k.
+    # NOTE (M2): sentence-level atomization can still lump a multi-topic line
+    # (e.g. a digest sentence containing "free"); finer atomization is an M2 task.
+    ranked_pos = [(s, f) for s, f in ranked if s > 0]
+    chosen: List[Fact] = [f for _, f in ranked_pos[:top_k]]
     chosen_ids = {f.fact_id for f in chosen}
+    chosen_types = {f.type for f in chosen}
 
-    # Exact-span guard: force-keep the best-ranked fact of each critical type.
+    # Exact-span guard: ensure AT LEAST ONE fact of each critical type is present.
+    # If the passport already has one, do NOT add a second -- that would re-admit a
+    # lower-relevance distractor of the same type (e.g. a $65 concert in the budget
+    # passport when the $40 constraint is already present).
     for ctype in CRITICAL_TYPES.get(role, set()):
+        if ctype in chosen_types:
+            continue
         for _, f in ranked:
-            if f.type == ctype and f.fact_id not in chosen_ids:
+            if f.type == ctype:
                 chosen.append(f)
                 chosen_ids.add(f.fact_id)
+                chosen_types.add(ctype)
                 break
 
     chosen = dedup_facts(chosen)

@@ -39,6 +39,15 @@ def test_time_after_existence_not_universal():
     assert check_constraint("Meet at 5:30.", spec) is False
 
 
+def test_time_after_rejects_money_counts_and_ids():
+    spec = {"id": "t", "type": "time_after", "hour": 18}
+    assert check_constraint("Budget is $40 and vegetarian.", spec) is False  # $40 is not 40:00
+    assert check_constraint("a career fair with over 40 employers", spec) is False
+    assert check_constraint("2 items due in 3 days", spec) is False
+    assert check_constraint("Burger Barn total $52.20.", spec) is False
+    assert check_constraint("CS186 lab, reserved for 19:00.", spec) is True
+
+
 def test_bad_specs_raise():
     with pytest.raises(ValueError):
         check_constraint("x", {"type": "nonsense"})

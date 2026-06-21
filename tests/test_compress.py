@@ -42,6 +42,18 @@ def test_calendar_passport_is_recipient_aware_availability_only():
     assert types <= {"availability"}, f"calendar leaked non-availability facts: {types}"
 
 
+def test_budget_passport_excludes_zero_relevance_priced_distractors():
+    # The positive-score filter must drop priced facts with no query overlap
+    # (concert tickets, a restaurant total) from the budget passport.
+    facts, by_id, task = _setup()
+    p = build_passport(facts, task, "budget")
+    rendered = render_passport(p, by_id)
+    assert "$65" not in rendered      # concert tickets
+    assert "$52.20" not in rendered   # Burger Barn total
+    # but the real budget constraint is still there (force-kept)
+    assert "$40" in rendered
+
+
 def test_unknown_role_raises():
     facts, _, task = _setup()
     try:

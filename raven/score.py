@@ -24,8 +24,10 @@ import re
 from typing import Dict, List, Tuple
 
 _DOLLAR = re.compile(r"\$\s?(\d+(?:\.\d{1,2})?)")
-# 7pm / 7:30 pm / 19:00
-_TIME = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", re.I)
+# A TRUSTED time must have am/pm (7pm) OR HH:MM (19:00). Bare integers are rejected
+# (they're usually money, counts, or ids). The lookbehind rejects $-prefixed and
+# multi-digit fragments (e.g. the "52" in "$52.20", the "86" in "CS186").
+_TIME = re.compile(r"(?<![\$\d])\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", re.I)
 
 
 def _within_budget_ok(text: str, value: float) -> bool:
@@ -38,7 +40,10 @@ def _within_budget_ok(text: str, value: float) -> bool:
 
 def _time_after_ok(text: str, hour: int) -> bool:
     ok = False
-    for h, _m, ap in _TIME.findall(text):
+    for m in _TIME.finditer(text):
+        h, mins, ap = m.group(1), m.group(2), m.group(3)
+        if not ap and not mins:
+            continue  # bare integer (money/count/id) -> not a trusted time
         hh = int(h)
         if ap:
             ap = ap.lower()
@@ -46,9 +51,7 @@ def _time_after_ok(text: str, hour: int) -> bool:
                 hh += 12
             elif ap == "am" and hh == 12:
                 hh = 0
-        elif hh < 13:
-            continue  # ambiguous bare 1..12; skip
-        if hh >= hour:
+        if 0 <= hh <= 23 and hh >= hour:
             ok = True  # EXISTENCE: some valid time satisfies the constraint
     return ok
 
