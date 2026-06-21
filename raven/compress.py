@@ -7,7 +7,7 @@ agent. Token counts are taken from THAT string, never from bare fact IDs.
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from .roles import CRITICAL_TYPES, ROLES
 from .retrieve import rank_facts
@@ -37,7 +37,13 @@ def dedup_facts(facts: List[Fact]) -> List[Fact]:
     return out
 
 
-def build_passport(facts: List[Fact], task: str, role: str, top_k: int = 6) -> Passport:
+def build_passport(
+    facts: List[Fact],
+    task: str,
+    role: str,
+    top_k: int = 6,
+    extra_keep_types: Optional[Set[str]] = None,
+) -> Passport:
     if role not in ROLES:
         raise KeyError(f"unknown role: {role}")
     spec = ROLES[role]
@@ -57,7 +63,11 @@ def build_passport(facts: List[Fact], task: str, role: str, top_k: int = 6) -> P
     # If the passport already has one, do NOT add a second -- that would re-admit a
     # lower-relevance distractor of the same type (e.g. a $65 concert in the budget
     # passport when the $40 constraint is already present).
-    for ctype in CRITICAL_TYPES.get(role, set()):
+    # `extra_keep_types` are types LEARNED by the verifier (ACON-style guidelines).
+    keep_types = set(CRITICAL_TYPES.get(role, set()))
+    if extra_keep_types:
+        keep_types |= set(extra_keep_types)
+    for ctype in keep_types:
         if ctype in chosen_types:
             continue
         for _, f in ranked:

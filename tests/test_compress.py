@@ -63,6 +63,20 @@ def test_unknown_role_raises():
         pass
 
 
+def test_extra_keep_types_force_keeps_a_learned_type():
+    # A budget fact with zero query-overlap is normally dropped from the restaurant
+    # passport; a learned guideline (extra_keep_types) must force-keep it.
+    facts = [
+        Fact("d1", "Maya is vegetarian.", "Maya is vegetarian.", "c", "dietary"),
+        Fact("g1", "Keep it under $40.", "Keep it under $40.", "c", "budget"),
+    ]
+    task = "plan dinner with maya"
+    without = build_passport(facts, task, "restaurant", top_k=1)
+    with_keep = build_passport(facts, task, "restaurant", top_k=1, extra_keep_types={"budget"})
+    assert "g1" not in without.facts        # normally dropped (zero relevance, beyond top_k)
+    assert "g1" in with_keep.facts          # force-kept by the learned guideline
+
+
 def test_dedup_collapses_duplicates():
     f = lambda i: Fact(f"f{i}", "Maya is vegetarian.", "Maya is vegetarian.", "c", "dietary")
     out = dedup_facts([f(0), f(1), f(2)])

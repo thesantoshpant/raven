@@ -48,8 +48,32 @@ tests/        pytest suite (stdlib path, offline)
 - This is a **single (now larger) hand-authored scenario**; M1's token saving is **budget-driven (scenario-independent)**. Generality needs a second scenario + the M2 quality result.
 - Passport selection **drops zero-relevance facts** and **force-keeps the critical constraint types**. Sentence-level atomization can still lump a multi-topic line (e.g. a digest sentence containing "free"); **finer atomization is an M2 improvement.**
 
+## Milestone 2 (done): decision preservation
+Role agents (real Claude, temp 0, cached) plan the dinner under three context conditions;
+the final plan is scored **deterministically** (structured-first) on the gold constraints.
+Run with `.venv\Scripts\python bench\run_m2.py` (uses `ANTHROPIC_API_KEY`).
+
+| condition | constraints | recurring agent tokens |
+|---|---|---|
+| raw (full memory to each agent) | 5/5 | 8308 |
+| generic (role-unaware, equal budget) | 4/5 (misses *confirm before paying*) | 1114 |
+| **RAVEN (recipient-aware)** | **5/5** | **1177** |
+
+RAVEN matches raw's 5/5 at **~86% lower recurring cost**; generic, at the *same* per-agent
+budget, drops a constraint. The win is RAVEN's **recipient-aware guard** (learnable role
+priors — not a per-scenario answer key) routing the standing "confirm before paying" rule to
+the budget agent — a rule the vague request never lexically surfaces, so the role-unaware blob
+misses it.
+
+Honest notes:
+- A **single existence-proof scenario**, not a success rate. A stronger role-unaware baseline
+  (embeddings) and more scenarios are future work.
+- The **verifier is an OPTIONAL one-time safety net** (defense-in-depth). In this scenario it
+  changed no decision (the guard already kept the criticals) and amortizes vs raw by request #2.
+- Tests stay **offline** (`FakeLLM`); only `bench/run_m2.py` calls the real API. The response
+  cache (`.llmcache/`) is git-ignored (it holds private-corpus responses).
+
 ## Roadmap
-- **M2** decision preservation: Claude agents + deterministic gold-constraint scoring + the verifier loop + ACON-style guideline learning.
 - **M3** multi-agent + Fetch (Agentverse/ASI:One) + Redis fact store.
 - **M4** demo UI (three-pane split-screen, token/$ meters, privacy view).
 - **M5** MarkItDown PDF→MD ingestion + polish.

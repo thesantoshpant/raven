@@ -79,3 +79,61 @@ def score_plan(plan_text: str, specs: List[dict]) -> Tuple[Dict[str, bool], int]
     """Return (per-constraint results, number satisfied)."""
     results = {s["id"]: check_constraint(plan_text, s) for s in specs}
     return results, sum(1 for v in results.values() if v)
+
+
+# --- Structured scoring (M2): score the chosen-plan fields first; free-form fallback ---
+
+def _time_hour(text: str) -> "int | None":
+    for m in _TIME.finditer(text or ""):
+        h, mins, ap = m.group(1), m.group(2), m.group(3)
+        if not ap and not mins:
+            continue
+        hh = int(h)
+        if ap:
+            ap = ap.lower()
+            if ap == "pm" and hh != 12:
+                hh += 12
+            elif ap == "am" and hh == 12:
+                hh = 0
+        if 0 <= hh <= 23:
+            return hh
+    return None
+
+
+def _structured_ok(value, rule: dict) -> bool:
+    t = rule.get("type")
+    if t == "is_true":
+        return value is True
+    if t == "max_dollar":
+        try:
+            return float(value) <= float(rule["value"])
+        except (TypeError, ValueError):
+            return False
+    if t == "time_after":
+        h = _time_hour(str(value))
+        return h is not None and h >= int(rule["hour"])
+    raise ValueError(f"unknown structured rule type: {t!r}")
+
+
+def score_structured(plan: dict, specs: List[dict]) -> Tuple[Dict[str, bool], int]:
+    """Score a structured plan dict against gold specs.
+
+    Each spec carries `field` + `structured` (the structured rule) and a `fallback`
+    free-form spec. If the structured field is present (not None) we score it
+    deterministically; otherwise we fall back to free-form text scoring.
+    """
+    # Is this a structured plan at all? (any structured field present and not None)
+    has_structured = any(s.get("field") and plan.get(s["field"]) is not None for s in specs)
+    results: Dict[str, bool] = {}
+    for s in specs:
+        field = s.get("field")
+        if field and plan.get(field) is not None:
+            results[s["id"]] = _structured_ok(plan[field], s["structured"])
+        elif field and has_structured:
+            # Structured plan, but THIS field is missing/None (e.g. no venue chosen)
+            # -> genuine FAIL, never a vacuous free-form pass.
+            results[s["id"]] = False
+        else:
+            # Purely free-form plan (no structured fields at all) -> free-form fallback.
+            results[s["id"]] = check_constraint(str(plan.get("text", "")), s.get("fallback", s))
+    return results, sum(1 for v in results.values() if v)

@@ -1,0 +1,11 @@
+{
+  "candidates": [
+    {"id": "green_bowl",   "name": "Green Bowl",        "vegetarian": true,  "price": 28, "noise": "quiet"},
+    {"id": "noodle_house", "name": "Noodle House",      "vegetarian": true,  "price": 31, "noise": "quiet"},
+    {"id": "prime_steak",  "name": "Prime Steak House", "vegetarian": false, "price": 55, "noise": "quiet"},
+    {"id": "loud_cantina", "name": "Loud Cantina",      "vegetarian": true,  "price": 22, "noise": "loud"},
+    {"id": "fancy_bistro", "name": "Fancy Bistro",      "vegetarian": true,  "price": 60, "noise": "quiet"}
+  ],
+  "correct": ["green_bowl", "noodle_house"],
+  "note": "Correct = vegetarian AND price<=40 AND quiet. Picking it requires knowing all three constraints; an agent missing the dietary/budget/noise fact provably picks wrong. Venues are identical across all conditions; only the personal CONTEXT each agent receives differs."
+}
