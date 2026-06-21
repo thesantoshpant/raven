@@ -58,6 +58,14 @@ def test_handoff_raw_tokens_match_original_input():
     assert h.raw_tokens == count_tokens((prior + "\n" + msg).strip(), backend="fallback")
 
 
+def test_facts_from_text_ids_unique_across_three_hops():
+    a = facts_from_text("Maya is vegetarian.")
+    b = facts_from_text("Keep dinners under $40.")
+    c = facts_from_text("Always confirm before paying.")
+    ids = [f.fact_id for f in a + b + c]
+    assert len(ids) == len(set(ids))  # no by-id overwrite across a multi-hop chain
+
+
 def test_facts_from_text_multilabel_combined_sentence():
     facts = facts_from_text("Maya is vegetarian and keep dinner under $40 and confirm before paying.")
     types = {f.type for f in facts}

@@ -62,6 +62,11 @@ def test_budget_agent_boolean_parsing():
     assert confirm("not json at all") is False  # malformed -> {} -> False
 
 
+def test_calendar_agent_parses_and_accounts_tokens():
+    out = run_calendar_agent(FakeLLM(lambda s, u: '{"time": "19:00"}'), "ctx", "plan dinner")
+    assert out["time"] == "19:00" and out["tokens"] > 0
+
+
 def test_aggregate_uses_ground_truth_venue_attrs():
     plan = aggregate(
         {"venue_id": "green_bowl"}, {"time": "19:00"}, {"requires_confirmation": True}, VENUES_BY_ID

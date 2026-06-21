@@ -25,7 +25,7 @@ _HELP = (
 _MAX_MEMORY_CHARS = 12_000  # cap pasted input so a huge blob can't block the agent loop
 _SEP = " |,\t\r\n"          # marker separators to strip from captured values
 _MENTION = re.compile(r"^\s*@\S+\s*")
-_ROLE = re.compile(r"\brole\s*[:=]\s*([A-Za-z]+)", re.I)          # letters only -> no trailing ./|/,
+_ROLE = re.compile(r"\brole\b\s*[:=]?\s*([A-Za-z]+)", re.I)       # ':' optional; letters only; validated before use
 _TASK = re.compile(r"\btask\s*[:=]\s*(.+?)(?=\s*[|,]?\s*\bmemory\s*[:=]|$)", re.I | re.S)
 _MEMORY = re.compile(r"\bmemory\s*[:=]\s*(.+)$", re.I | re.S)
 _DANGLING = re.compile(r"(?i)\b(?:role|task|memory)\s*[:=]\s*$")   # a marker with no value left

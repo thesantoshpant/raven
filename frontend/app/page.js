@@ -84,7 +84,7 @@ function AgentsPane({ passports, error }) {
             <span className="role">{ROLE_ICON[r.role] || null}{r.role}</span>
             <span className="pill">{r.tokens} tok · −{r.saved_pct}%</span>
           </div>
-          <div className="sub">sees {r.facts.length} facts · denied {r.excluded_count} · ~${Number(r.est_usd_per_send).toFixed(4)}/send</div>
+          <div className="sub">sees {r.facts.length} facts · denied {r.excluded_count} · ~${(Number(r.est_usd_per_send) * 1000).toFixed(2)}/1k sends</div>
           {open === r.role && (
             <div className="passport">
               {r.facts.map((f, i) => (
