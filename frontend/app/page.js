@@ -126,6 +126,11 @@ function Benchmark() {
 
   const order = ["raw", "generic", "raven"];
   const labels = { raw: "raw (full)", generic: "generic", raven: "RAVEN" };
+  const CONSTRAINT_LABEL = {
+    vegetarian: "vegetarian", budget_under_40: "under $40", after_6pm: "after 6pm",
+    not_loud: "not loud", confirm_before_pay: "confirm before paying",
+  };
+  const pretty = (m) => CONSTRAINT_LABEL[m] || m;
   return (
     <div>
       <button className="btn" onClick={run} disabled={loading}>
@@ -145,7 +150,7 @@ function Benchmark() {
               <div className={"cond" + (c === "raven" ? " raven" : "")} key={c}>
                 <div>
                   <span className="name">{labels[c]}</span>
-                  {d.missed.length > 0 && <div className="missed">missed: {d.missed.join(", ")}</div>}
+                  {d.missed.length > 0 && <div className="missed">missed: {d.missed.map(pretty).join(", ")}</div>}
                 </div>
                 <span>
                   <span className={"score " + (full ? "full" : "partial")}>{d.constraints}/{d.total}</span>{" "}
