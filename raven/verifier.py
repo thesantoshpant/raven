@@ -3,7 +3,8 @@
 For each role's action-critical probe: answer it from the FULL context and from the
 compressed passport. If the answers diverge, the passport lost a load-bearing fact
 -> re-add the best fact of the probe's type AND learn a guideline (so future builds
-keep that type). Verifier token cost is returned and counted in RAVEN's total.
+keep that type). Verifier token cost is returned and reported SEPARATELY as a
+one-time, amortizable cost -- it is NOT folded into RAVEN's recurring per-task total.
 
 Runs once per role passport (not per agent run), so its cost is one-time.
 """

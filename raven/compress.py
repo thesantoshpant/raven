@@ -52,8 +52,9 @@ def build_passport(
 
     # Only keep facts with positive query relevance (drops zero-overlap distractors
     # like a $65 concert in the budget passport), then take the top_k.
-    # NOTE (M2): sentence-level atomization can still lump a multi-topic line
-    # (e.g. a digest sentence containing "free"); finer atomization is an M2 task.
+    # NOTE: sentence-level atomization can still lump a multi-topic line (e.g. a
+    # digest sentence containing "free"). Finer fact subtypes (e.g. budget_limit vs
+    # expense_receipt) to clean passports further are DEFERRED to M3/M4.
     ranked_pos = [(s, f) for s, f in ranked if s > 0]
     chosen: List[Fact] = [f for _, f in ranked_pos[:top_k]]
     chosen_ids = {f.fact_id for f in chosen}
