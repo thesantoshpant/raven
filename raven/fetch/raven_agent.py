@@ -9,9 +9,11 @@ and it replies with a compressed RAVEN context passport + the token savings.
 
 Setup:
     pip install -r requirements-fetch.txt
+    $env:RAVEN_AGENT_SEED = "your-own-secret-phrase"   # REQUIRED for mailbox runs (private identity)
     python raven/fetch/raven_agent.py
 Then open the printed Agentverse Inspector URL and connect the mailbox; the agent
-registers on the Almanac and becomes reachable from ASI:One.
+registers on the Almanac and becomes reachable from ASI:One. (Running without
+RAVEN_AGENT_SEED raises a clear error -- the seed must not be a committed default.)
 
 Agent construction lives in build_agent() so importing this module has NO side effects
 (no network, no key files, no log spam).

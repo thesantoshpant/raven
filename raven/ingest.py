@@ -31,7 +31,7 @@ _TYPE_RULES = [
         r"|\bspend (?:no more than|less than|under|below|at most)|\bmax(?:imum)? \$?\d+"
         r"|\bcap(?:ped)? (?:at|of|to)?\s*\$?\d|\bbudget (?:of|is|under|cap|limit|for|:)"
         r"|\bon a budget\b|\bdinner budget\b|\bkeep (?:it|dinner\w*|the bill|things?) (?:under|below|cheap|affordable|to)"
-        r"|\bcheap\b|\baffordable\b|\bper person\b)", re.I)),
+        r"|\bcheap\b|\baffordable\b)", re.I)),  # NOTE: "per person" is a price OBSERVATION, not a cap -> not budget_limit
     ("expense_receipt", re.compile(r"(\breceipt\b|\btotal:?\s*\$|\bspent\b|\bpaid\b|\bcharged?\b|\bbill\b|\bcost me\b|tickets? (?:are|were|cost)|\$\d+\.\d{2})", re.I)),
     ("availability", re.compile(r"\b(lab|class|until|busy|after \d|before \d|free (?:after|before|from|until|on|all|this|next|fri|sat|sun|mon|tue|wed|thu|\d)|\d{1,2}(?::\d{2})?\s?(?:am|pm)|mon|tue|wed|thu|fri|sat|sun|schedule|calendar|section)\b", re.I)),
     ("location", re.compile(r"\b(near|downtown|street|address|blvd|avenue|ave|area|neighborhood|mile|walk)\b", re.I)),

@@ -6,7 +6,7 @@ naive summary (cheap but drops the facts that matter), RAVEN gives each agent a
 tiny **context passport**: only the facts that agent's role needs — at the front
 door (user memory → first agent) and at every agent-to-agent handoff.
 
-## Milestone 1 (this repo so far): the core engine + the token gate
+## Milestone 1: the core engine + the token gate
 M1 proves **context-payload (input-token) reduction** — recipient-aware selection
 cuts query-time tokens ~93% vs a raw broadcast (gate threshold: ≥50%) — measured
 with a tokenizer, no LLM required. (Decision-preservation / constraint satisfaction
@@ -135,5 +135,12 @@ advisories (incl. a critical) — this is **local-demo-only, risk accepted; do N
 publicly as-is.** Bump Next after the event. If port 3000 is busy, run `npm run dev -- -p 3000`
 (the backend's CORS allows 3000/3001).
 
-## Roadmap
-- **M5** MarkItDown PDF→MD ingestion + polish.
+## Milestone 5 (done): document ingestion
+Upload a PDF / docx / html / md (MarkItDown → markdown → facts) and it becomes agent memory
+with passports recomputed live (`POST /api/ingest`, the upload control in the Memory pane;
+`raven/ingest_docs.py`). `markitdown` is optional (`requirements-docs.txt`); `.md`/`.txt`
+work without it, and the test suite never imports it.
+
+## What's next (post-hackathon)
+- A hosted Agentverse deployment; embeddings retrieval; more scenarios for a quality *rate*
+  (not just an existence proof); KV-cache-level relay; bump Next.js for public hosting.

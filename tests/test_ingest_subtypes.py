@@ -38,6 +38,12 @@ def test_auto_charge_rule_is_permission():
     assert classify("Never auto-charge my card without checking first.") == "permission"
 
 
+def test_per_person_price_is_not_a_budget_limit():
+    # "$28 per person" is a price OBSERVATION, not a spending cap -> must not be a hard constraint.
+    assert classify("Green Bowl is $28 per person.") != "budget_limit"
+    assert classify("Keep dinners under $40.") == "budget_limit"  # a real cap still is
+
+
 def test_budget_passport_excludes_expense_receipts():
     corpus = load_corpus(os.path.join(DATA, "corpus_friday_dinner.json"))
     facts = ingest_corpus(corpus)

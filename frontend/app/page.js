@@ -143,8 +143,10 @@ function Benchmark() {
             const d = data.conditions[c];
             if (!d) return null;
             const full = d.constraints === d.total;
-            const dots = Array.from({ length: d.total }, (_, i) => (
-              <span key={i} className={i < d.constraints ? "on" : "miss"}>●</span>
+            // colour each dot by its ACTUAL constraint status (not position), so a
+            // middle failure shows correctly.
+            const dots = Object.entries(d.per_constraint || {}).map(([k, ok]) => (
+              <span key={k} className={ok ? "on" : "miss"} title={pretty(k)}>●</span>
             ));
             return (
               <div className={"cond" + (c === "raven" ? " raven" : "")} key={c}>
@@ -345,7 +347,7 @@ export default function Home() {
 
       <footer className="foot">
         <span>Fetch.ai · ASI:One</span>
-        <span><a href="#">Documentation</a><a href="#">Privacy</a><a href="#">Terms</a></span>
+        <span>RAVEN — verified context passports for the agentic web</span>
       </footer>
     </div>
   );
