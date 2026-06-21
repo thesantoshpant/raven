@@ -1,8 +1,10 @@
-"""Local chat-protocol round-trip smoke (no Agentverse, no network).
+"""Local chat-protocol round-trip smoke (local Bureau, no Agentverse mailbox required).
 
 Spins up the RAVEN agent + a client uAgent in one Bureau, sends a ChatMessage, and
 asserts a ChatMessage reply containing a passport. This is the EXACT path ASI:One uses
 (the standard Chat Protocol) -- proving it works locally de-risks the live demo.
+uAgents may log harmless network/contract-query warnings before the local round-trip
+succeeds. Uses os._exit, so run it during REHEARSAL, not mid-presentation.
 
     pip install -r requirements-fetch.txt
     python raven/fetch/chat_smoke.py        # exits 0 on a passport reply, 1 otherwise

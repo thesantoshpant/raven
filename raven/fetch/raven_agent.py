@@ -29,13 +29,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from raven.handlers import handle_compress_request  # noqa: E402
 
-SEED = os.environ.get("RAVEN_AGENT_SEED", "raven-context-passport-agent-seed-0001")
+# A seed is the agent's PRIVATE identity. Never ship a real one: the committed default is
+# used ONLY for local (mailbox=False) runs; mailbox/Agentverse runs must set RAVEN_AGENT_SEED.
+_LOCAL_DEV_SEED = "raven-local-dev-seed-0001"
 
 
 def build_agent(mailbox: bool = True, port: int = 8001):
     """Construct and wire the Chat-Protocol uAgent. Imports uagents lazily so module
     import stays side-effect-free. Pass mailbox=False, port=None for a purely-local
-    (no network) instance, e.g. inside a Bureau for chat_smoke.py."""
+    instance (e.g. inside a Bureau for chat_smoke.py). For mailbox=True (Agentverse),
+    RAVEN_AGENT_SEED MUST be set in the environment."""
     from uagents import Agent, Context, Protocol
     from uagents_core.contrib.protocols.chat import (
         ChatAcknowledgement,
@@ -45,7 +48,15 @@ def build_agent(mailbox: bool = True, port: int = 8001):
         chat_protocol_spec,
     )
 
-    kwargs = dict(name="raven-context-compressor", seed=SEED, mailbox=mailbox,
+    seed = os.environ.get("RAVEN_AGENT_SEED")
+    if mailbox and not seed:
+        raise RuntimeError(
+            "RAVEN_AGENT_SEED must be set for mailbox/Agentverse runs -- it is the agent's "
+            "private identity seed and must not be a committed default. "
+            "Set it (e.g. $env:RAVEN_AGENT_SEED='your-secret-phrase') and re-run."
+        )
+    seed = seed or _LOCAL_DEV_SEED
+    kwargs = dict(name="raven-context-compressor", seed=seed, mailbox=mailbox,
                   publish_agent_details=mailbox)
     if port is not None:
         kwargs["port"] = port

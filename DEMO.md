@@ -57,7 +57,10 @@ preserved, and a real agent on Fetch's network today."
 ---
 
 ## Agentverse mailbox + ASI:One setup (one-time, your account)
-1. `python raven/fetch/raven_agent.py` — it prints an **Agentverse Inspector** URL.
+1. Set a **private** identity seed (required for mailbox runs; keep it secret, reuse the
+   same value to keep the same agent address):
+   `$env:RAVEN_AGENT_SEED = "your-own-secret-phrase"`
+   then `python raven/fetch/raven_agent.py` — it prints an **Agentverse Inspector** URL.
 2. Open that URL (log into Agentverse), click **Connect** → **Mailbox** to link the agent.
 3. In the agent's Agentverse page, paste the contents of `raven/fetch/AGENT_README.md` as the
    README (ASI:One matches agents on this text — keep the keywords).
@@ -68,6 +71,7 @@ preserved, and a real agent on Fetch's network today."
 ## Fallback ladder (if something breaks live)
 - Wifi flaky → the benchmark is cached (warmed in §0), so it still runs instantly.
 - Agentverse/ASI:One not cooperating → run the **local Bureau** (`bureau_demo.py --once`) or
-  `chat_smoke.py` — same Chat Protocol, no network.
+  `chat_smoke.py` — same Chat Protocol, no Agentverse mailbox required (uAgents may log a few
+  harmless network warnings before the local round-trip succeeds).
 - Backend down → restart `uvicorn`; the UI shows a clear "backend not reachable" banner.
 - Port 3000 busy → `npm run dev -- -p 3000` (CORS also allows 3001).
