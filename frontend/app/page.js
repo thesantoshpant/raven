@@ -30,6 +30,19 @@ function Highlighted({ text, phrases }) {
   );
 }
 
+function Rich({ text }) {
+  // minimal markdown: render **bold** as <strong> and keep line breaks.
+  const lines = String(text).split("\n");
+  return lines.map((line, i) => (
+    <span key={i}>
+      {line.split(/(\*\*[^*]+\*\*)/g).map((seg, j) =>
+        /^\*\*[^*]+\*\*$/.test(seg) ? <strong key={j}>{seg.slice(2, -2)}</strong> : seg
+      )}
+      {i < lines.length - 1 && <br />}
+    </span>
+  ));
+}
+
 const svg = (children) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
 );
@@ -335,12 +348,12 @@ function ABCompare({ scenario }) {
             <div className="panel">
               <h2>Without RAVEN <span className="count">{out.without.input_tokens.toLocaleString()} in-tok</span></h2>
               <div className="muted" style={{ marginBottom: 10 }}>full memory in context</div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{out.without.answer}</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}><Rich text={out.without.answer} /></div>
             </div>
             <div className="panel" style={{ borderColor: "var(--accent)" }}>
               <h2>RAVEN <span className="count">{out.raven.input_tokens.toLocaleString()} in-tok</span></h2>
               <div className="muted" style={{ marginBottom: 10 }}>compressed passport in context</div>
-              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}>{out.raven.answer}</div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.6 }}><Rich text={out.raven.answer} /></div>
               <details style={{ marginTop: 12 }}>
                 <summary className="muted" style={{ cursor: "pointer" }}>show the passport RAVEN sent</summary>
                 <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", fontSize: 12, background: "var(--sunken)", border: "1px solid var(--border)", borderRadius: 8, padding: 10, marginTop: 6 }}>{out.raven.context}</pre>

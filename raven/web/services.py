@@ -173,18 +173,35 @@ _AB_SYS = (
 )
 
 
-def _raven_context_for_prompt(memory_text: str, prompt: str, max_facts: int = 14) -> str:
-    """RAVEN for a single assistant: atomize the memory and keep only the facts relevant to
-    THIS prompt (query-aware, recipient = this request). Returns a compact rendered context."""
+_AB_GUARD_TYPES = ("dietary", "permission", "budget_limit")  # standing rules: ALWAYS keep
+
+
+def _raven_context_for_prompt(memory_text: str, prompt: str, max_facts: int = 8) -> str:
+    """RAVEN for a single assistant: atomize the memory, GUARD the standing-rule facts (so a
+    constraint like 'confirm before paying' is never dropped even if it doesn't lexically match
+    the prompt), then fill with the top query-relevant facts. A relevance floor drops the
+    common-word noise so the passport stays tight."""
     facts = facts_from_text(memory_text)
-    ranked = rank_facts(facts, prompt, allowed_types=None)
-    chosen = [f for s, f in ranked if s > 0][:max_facts] or [f for _, f in ranked[:5]]
-    seen, lines = set(), []
-    for f in chosen:
+    ranked = rank_facts(facts, prompt, allowed_types=None)  # (score, fact) desc; ALL facts
+    chosen, seen = [], set()
+
+    def add(f):
         if f.text not in seen:
             seen.add(f.text)
-            lines.append(f.text)
-    return "RELEVANT NOTES:\n" + "\n".join(f"- {t}" for t in lines)
+            chosen.append(f)
+
+    for t in _AB_GUARD_TYPES:  # 1) guard: best-ranked fact of each standing-rule type
+        for _, f in ranked:
+            if f.type == t:
+                add(f)
+                break
+    floor = ranked[0][0] * 0.25 if (ranked and ranked[0][0] > 0) else 0.0
+    for s, f in ranked:  # 2) fill with top query-relevant facts (floor drops noise)
+        if len(chosen) >= max_facts:
+            break
+        if s > 0 and s >= floor:
+            add(f)
+    return "RELEVANT NOTES:\n" + "\n".join(f"- {f.text}" for f in chosen)
 
 
 def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict:
@@ -193,7 +210,7 @@ def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict
     model's REAL input usage (the authoritative, judge-proof number)."""
     if not memory_text or not memory_text.strip():
         corpus, _, _ = _load()
-        memory_text = serialize_corpus(corpus)
+        memory_text = " ".join(it.get("text", "") for it in corpus)  # raw notes, no [id] headers
     full_ctx = memory_text.strip()
     raven_ctx = _raven_context_for_prompt(memory_text, prompt)
 
