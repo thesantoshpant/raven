@@ -84,11 +84,12 @@ header.top .tag { color: var(--ink-muted); font-size: 13px; }
 
 /* ---- token meter ---- */
 .meter { margin: 4px 0 18px; }
-.bar.label { display: flex; justify-content: space-between; align-items: baseline; color: var(--ink-muted); font-size: 12px; margin: 12px 0 5px; }
-.bar.label .v { font-family: var(--font-mono); color: var(--ink); }
-.bar { border-radius: 5px; height: 8px; }
+.meter-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: var(--ink-muted); font-size: 12px; margin: 16px 0 7px; }
+.meter-row:first-child { margin-top: 4px; }
+.meter-row .v { font-family: var(--font-mono); color: var(--ink); white-space: nowrap; }
+.bar { border-radius: 999px; height: 8px; }
 .bar.raw { background: #e3ded2; }
-.bar.raven { background: var(--accent); }
+.bar.raven { background: var(--accent); min-width: 8px; }
 .bigstat { font-family: var(--font-mono); font-size: 40px; font-weight: 500; line-height: 1; margin-top: 18px; }
 .bigstat.good { color: var(--kept); }
 .statline { color: var(--ink-muted); font-size: 13px; margin-top: 4px; }
@@ -108,10 +109,9 @@ header.top .tag { color: var(--ink-muted); font-size: 13px; }
 .cond .score { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
 .cond .score.full { color: var(--kept); }
 .cond .score.partial { color: var(--dropped); }
-.cond .dots { letter-spacing: 2px; font-size: 11px; }
+.cond .dots { letter-spacing: 2px; font-size: 10px; }
 .cond .dots .on { color: var(--kept); }
-.cond .dots .onbad { color: var(--dropped); }
-.cond .dots .off { color: var(--border); }
+.cond .dots .miss { color: var(--dropped); }
 .cond .toks { color: var(--ink-muted); font-size: 12px; font-family: var(--font-mono); text-align: right; }
 .cond .missed { color: var(--dropped); font-size: 11px; margin-top: 2px; }
 .cond.raven { background: var(--accent-soft); border-radius: 8px; border-bottom-color: transparent; padding-left: 10px; padding-right: 10px; }
@@ -150,6 +150,6 @@ textarea:focus, select:focus { outline: none; border-color: var(--accent); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- footer ---- */
-footer.foot { margin-top: auto; padding: 28px 0 22px; display: flex; justify-content: space-between; color: var(--ink-faint); font-size: 12px; border-top: 1px solid var(--border); margin-top: 40px; }
+footer.foot { margin-top: auto; padding: 24px 0 22px; display: flex; justify-content: space-between; color: var(--ink-faint); font-size: 12px; border-top: 1px solid var(--border); }
 footer.foot a { color: var(--ink-faint); text-decoration: none; margin-left: 18px; }
 footer.foot a:hover { color: var(--ink-muted); }

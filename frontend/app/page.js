@@ -100,9 +100,9 @@ function Meter({ passports, error }) {
   const ravenW = Math.max(6, Math.round((ravenTotal / rawBroadcast) * 100));
   return (
     <div className="meter">
-      <div className="bar label"><span>Raw — full memory to all {n} agents</span><span className="v">{rawBroadcast.toLocaleString()} tok</span></div>
+      <div className="meter-row"><span>Raw — full memory to all {n} agents</span><span className="v">{rawBroadcast.toLocaleString()} tok</span></div>
       <div className="bar raw" style={{ width: "100%" }} />
-      <div className="bar label"><span>RAVEN — tailored passports</span><span className="v">{ravenTotal.toLocaleString()} tok</span></div>
+      <div className="meter-row"><span>RAVEN — tailored passports</span><span className="v">{ravenTotal.toLocaleString()} tok</span></div>
       <div className="bar raven" style={{ width: ravenW + "%" }} />
       <div style={{ marginTop: 16 }}>
         <div className="bigstat good">{savedPct}%</div>
@@ -139,7 +139,7 @@ function Benchmark() {
             if (!d) return null;
             const full = d.constraints === d.total;
             const dots = Array.from({ length: d.total }, (_, i) => (
-              <span key={i} className={i < d.constraints ? (full ? "on" : "onbad") : "off"}>●</span>
+              <span key={i} className={i < d.constraints ? "on" : "miss"}>●</span>
             ));
             return (
               <div className={"cond" + (c === "raven" ? " raven" : "")} key={c}>
@@ -327,7 +327,7 @@ export default function Home() {
           <div className="panel">
             <h2>Token meter · live decision</h2>
             <Meter passports={passports} error={pErr} />
-            <div className="muted" style={{ margin: "14px 0 8px", borderTop: "1px dashed var(--border)", paddingTop: 12 }}>
+            <div className="muted" style={{ margin: "18px 0 10px", borderTop: "1px solid var(--border)", paddingTop: 14 }}>
               Live decision benchmark — 3 decision agents (restaurant · calendar · budget)
             </div>
             <Benchmark />
