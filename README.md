@@ -8,8 +8,9 @@ door (user memory → first agent) and at every agent-to-agent handoff.
 
 ## Milestone 1 (this repo so far): the core engine + the token gate
 M1 proves **context-payload (input-token) reduction** — recipient-aware selection
-cuts query-time tokens by ≥50% vs a raw broadcast — measured with a tokenizer, no
-LLM required. (Decision-preservation / constraint satisfaction is Milestone 2.)
+cuts query-time tokens ~93% vs a raw broadcast (gate threshold: ≥50%) — measured
+with a tokenizer, no LLM required. (Decision-preservation / constraint satisfaction
+is Milestone 2.)
 
 ### Run it
 ```
@@ -41,7 +42,7 @@ tests/        pytest suite (stdlib path, offline)
 ```
 
 ## Honest notes / limitations (M1)
-- **Apples-to-apples is per-send and the N-send total.** Per send, a RAVEN passport is ~87% smaller than the full memory; across the 4-agent workflow, RAVEN's total is ~87% below `raw_broadcast` (full memory to every agent). Even vs `raw_once` (an *optimistic* single shared full payload), RAVEN's total is ~48% lower.
+- **Apples-to-apples is per-send and the N-send total.** Per send, a RAVEN passport is ~93% smaller than the full memory; across the 4-agent workflow, RAVEN's total is ~93% below `raw_broadcast` (full memory to every agent). Even vs `raw_once` (an *optimistic* single shared full payload), RAVEN's total is ~72% lower. (Current corpus: 38 items / 127 facts; numbers from `bench/run_gate.py`, fallback tokenizer.)
 - **At equal budget, RAVEN ties the fair baseline on tokens** (`generic_factstore_unaware` ≈ RAVEN). That's expected: the token win is shared by *any* equal-budget fact-store selection. RAVEN's real differentiator is **recipient-aware decision quality at that budget**, which **M2** measures — M1 does not claim it.
 - The fallback tokenizer is an approximation; the gate is **ratio-based** and uses one counter across all conditions. Install `tiktoken` for exact counts (ratios stay close).
 - This is a **single (now larger) hand-authored scenario**; M1's token saving is **budget-driven (scenario-independent)**. Generality needs a second scenario + the M2 quality result.
