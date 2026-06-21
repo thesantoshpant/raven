@@ -26,7 +26,8 @@ from .pricing import est_cost_usd
 DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
 
 # Substrings the UI highlights in the messy memory (the 5 buried gold constraints).
-GOLD_HIGHLIGHTS = ["vegetarian", "no meat", "under $40", "$40", "5:30", "lab", "confirm", "auto-charge", "loud"]
+# NOTE: "lab" was removed -- it substring-matched "available"/"collaborate" etc. (false golds).
+GOLD_HIGHLIGHTS = ["vegetarian", "no meat", "under $40", "$40", "5:30", "confirm", "auto-charge", "loud"]
 
 # Scripted agent outputs for the RELAY demo (deterministic, no LLM) -- match bench/run_relay.py.
 _RESTAURANT_OUT = (

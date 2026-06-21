@@ -33,7 +33,14 @@ _TYPE_RULES = [
         r"|\bon a budget\b|\bdinner budget\b|\bkeep (?:it|dinner\w*|the bill|things?) (?:under|below|cheap|affordable|to)"
         r"|\bcheap\b|\baffordable\b)", re.I)),  # NOTE: "per person" is a price OBSERVATION, not a cap -> not budget_limit
     ("expense_receipt", re.compile(r"(\breceipt\b|\btotal:?\s*\$|\bspent\b|\bpaid\b|\bcharged?\b|\bbill\b|\bcost me\b|tickets? (?:are|were|cost)|\$\d+\.\d{2})", re.I)),
-    ("availability", re.compile(r"\b(lab|class|until|busy|after \d|before \d|free (?:after|before|from|until|on|all|this|next|fri|sat|sun|mon|tue|wed|thu|\d)|\d{1,2}(?::\d{2})?\s?(?:am|pm)|mon|tue|wed|thu|fri|sat|sun|schedule|calendar|section)\b", re.I)),
+    ("availability", re.compile(
+        r"\b(?:lab|class|busy|schedule|calendar|section|until|tonight|evening)\b"
+        r"|\b(?:after|before|by|from)\s+\d"
+        r"|\bfree\s+(?:after|before|from|until|on|all|this|next|tonight|the|\d)"
+        r"|\b(?:mon|tues?|wed(?:nes)?|thurs?|fri|sat(?:ur)?|sun)(?:day)?\b"   # weekday abbr or full
+        r"|\b(?:[01]?\d|2[0-3]):[0-5]\d\b"                                     # 24-hour time 19:00 / 5:30
+        r"|\b\d{1,2}(?::\d{2})?\s?(?:am|pm)\b",                               # 12-hour time 7pm / 5:30pm
+        re.I)),
     ("location", re.compile(r"\b(near|downtown|street|address|blvd|avenue|ave|area|neighborhood|mile|walk)\b", re.I)),
     ("preference", re.compile(r"\b(love|loves|like|likes|hate|hates|dislike|prefer|favou?rite|loud|quiet|annoy\w*|headache)\b", re.I)),
 ]

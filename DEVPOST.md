@@ -31,7 +31,7 @@ agent (we call the second edge **RELAY**). It is **recipient-aware** (least priv
 - **Decision preservation (M2):** with real Claude agents, at an equal per-agent budget —
   **raw 5/5, generic compression 4/5 (drops the standing "confirm before paying" rule),
   RAVEN 5/5** — deterministic, structured gold-constraint scoring.
-- **RELAY (M3):** agent→agent handoffs ~91% smaller than forwarding the transcript, and it
+- **RELAY (M3):** agent→agent handoffs ~90% smaller than forwarding the transcript, and it
   preserves the standing back-context constraints last-message passing drops (3/3 vs 1/3).
 - **Live demo (M4):** a three-pane dashboard — memory → passports → live benchmark → RELAY.
 

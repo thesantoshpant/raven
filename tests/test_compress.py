@@ -77,6 +77,18 @@ def test_extra_keep_types_force_keeps_a_learned_type():
     assert "g1" in with_keep.facts          # force-kept by the learned guideline
 
 
+def test_writer_passport_keeps_standing_constraints():
+    # The summarizer must retain dietary/budget/permission even though BM25 scores them ~0.
+    facts = [
+        Fact("d1", "Maya is vegetarian.", "Maya is vegetarian.", "c", "dietary"),
+        Fact("g1", "Keep dinners under $40.", "Keep dinners under $40.", "c", "budget_limit"),
+        Fact("p1", "Always confirm before paying.", "Always confirm before paying.", "c", "permission"),
+    ]
+    rendered = render_passport(build_passport(facts, "general task", "writer"),
+                              {f.fact_id: f for f in facts}).lower()
+    assert "$40" in rendered and "vegetarian" in rendered and "confirm" in rendered
+
+
 def test_dedup_collapses_duplicates():
     f = lambda i: Fact(f"f{i}", "Maya is vegetarian.", "Maya is vegetarian.", "c", "dietary")
     out = dedup_facts([f(0), f(1), f(2)])

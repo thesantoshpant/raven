@@ -49,6 +49,22 @@ def test_unknown_role_defaults_to_writer():
     assert stats["ok"] is True and stats["role"] == "writer"
 
 
+def test_single_line_with_mention_and_inline_role():
+    # The real ASI:One/Agentverse format: one line, leading @mention, inline role.
+    reply, stats = handle_compress_request(
+        "@agent1qfry9xyz role: budget Maya is vegetarian. Keep dinners under $40. Always confirm before paying."
+    )
+    assert stats["ok"] is True and stats["role"] == "budget"
+    assert "$40" in reply and "confirm" in reply.lower()
+    assert "@agent1qfry9xyz" not in reply  # mention stripped, not leaked into memory
+
+
+def test_plain_text_no_markers_is_memory_for_writer():
+    reply, stats = handle_compress_request("Maya is vegetarian and keep dinners under $40.")
+    assert stats["ok"] is True and stats["role"] == "writer"
+    assert stats["facts"] >= 1 and "$40" in reply
+
+
 def test_combined_sentence_does_not_yield_empty_budget_passport():
     # Regression: a single combined sentence used to classify as ONE type (dietary) and
     # leave the budget passport empty while still claiming success.

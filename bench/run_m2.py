@@ -128,17 +128,22 @@ def run():
     print("surfaces that rule, so the role-unaware blob misses it. This is NOT the verifier.")
 
     if RUN_VERIFIER:
-        print(
-            f"\nVerifier (OPTIONAL safety net, ONE-TIME cost {verifier_tokens} tok): re-added/learned "
-            f"= {learned_all or 'nothing -- the guard already kept every action-critical fact here'}."
-        )
-        print(f"  RAVEN first run incl. one-time verifier: {rav_rec + verifier_tokens} tok; "
-              f"recurring thereafter: {rav_rec} tok/task.")
-        if saving > 0:
-            be = -(-verifier_tokens // saving)  # ceil
-            print(f"  Amortizes vs raw by request #{be} (recurring saving {saving} tok/task).")
-        print("  It changed no decision in THIS scenario; it is defense-in-depth for when role")
-        print("  priors are incomplete (tests/test_verifier.py shows it repairing a real drop).")
+        if verifier_tokens == 0:
+            print(
+                "\nVerifier (OPTIONAL safety net): 0 extra tokens here -- the recipient-aware guard "
+                "already kept every action-critical fact, so it had nothing to repair."
+            )
+        else:
+            print(
+                f"\nVerifier (OPTIONAL safety net, ONE-TIME cost {verifier_tokens} tok): re-added/learned "
+                f"= {learned_all}."
+            )
+            print(f"  RAVEN first run incl. one-time verifier: {rav_rec + verifier_tokens} tok; "
+                  f"recurring thereafter: {rav_rec} tok/task.")
+            if saving > 0:
+                be = -(-verifier_tokens // saving)  # ceil
+                print(f"  Amortizes vs raw by request #{be} (recurring saving {saving} tok/task).")
+        print("  Defense-in-depth: tests/test_verifier.py shows it repairing a genuinely-missing fact.")
 
     print(f"\nNOTE: objective venue ground-truth scoring; temp=0 + cached (pinned to {DEFAULT_MODEL}).")
     return results

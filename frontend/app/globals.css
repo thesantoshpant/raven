@@ -6,7 +6,7 @@
   --border: #e7e5de;
   --ink: #1b1c18;
   --ink-muted: #5c6066;
-  --ink-faint: #9a9da3;
+  --ink-faint: #767a80;  /* darkened for WCAG AA on small secondary labels */
   --accent: #0f6e5c;
   --accent-strong: #005445;
   --accent-soft: #e4f0ec;

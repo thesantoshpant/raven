@@ -72,8 +72,12 @@ def build_agent(mailbox: bool = True, port: int = 8001):
     async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
         await ctx.send(sender, ChatAcknowledgement(
             timestamp=datetime.now(timezone.utc), acknowledged_msg_id=msg.msg_id))
-        reply, stats = handle_compress_request(_text_of(msg))
-        ctx.logger.info(f"RAVEN compress -> {stats}")
+        try:  # never let an error hang the chat -- always reply + end the session
+            reply, stats = handle_compress_request(_text_of(msg))
+            ctx.logger.info(f"RAVEN compress -> {stats}")
+        except Exception as exc:  # noqa: BLE001
+            ctx.logger.error(f"RAVEN compress error: {exc}")
+            reply = "Sorry -- I couldn't compress that. Try:  role: budget | memory: <your notes>"
         await ctx.send(sender, ChatMessage(
             timestamp=datetime.now(timezone.utc),
             msg_id=uuid4(),

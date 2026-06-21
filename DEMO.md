@@ -30,7 +30,7 @@ that agent's role needs, at every edge of a multi-agent system."
 - **Middle (Agents · passports):** click **budget** → "Instead of all 127 facts, the budget
   agent gets a 3-line passport: the $40 cap + the confirm rule. It's *denied* the rest —
   least privilege by construction." Click **restaurant** → "different agent, different slice."
-- **Right (Token meter + live benchmark):** "Across the workflow that's ~93% fewer context
+- **Right (Token meter + live benchmark):** "Across the workflow that's ~94% fewer context
   tokens." Click **Run benchmark** → "Now the punchline — does compression hurt the decision?
   **raw** (full memory) gets 5/5 but is expensive. **generic** compression at the same budget
   drops to **4/5** — it loses the payment rule. **RAVEN** keeps **5/5** at a fraction of the
@@ -39,7 +39,7 @@ that agent's role needs, at every edge of a multi-agent system."
 ## 3. RELAY tab (30s)
 "Compression isn't just at the front door — it's every agent-to-agent handoff. Naively you
 forward the whole growing transcript. RELAY forwards the latest message + a compressed
-back-context passport: **91% smaller** than broadcasting the transcript, and it *keeps* the
+back-context passport: **~90% smaller** than broadcasting the transcript, and it *keeps* the
 standing constraints that last-message-passing silently drops (3/3 hops vs 1/3)."
 
 ## 4. Fetch / ASI:One — "it's live on the agentic web" (30s)
@@ -51,7 +51,7 @@ standard Chat Protocol." Then EITHER:
   with RAVEN compressing the wire; or `python raven/fetch/chat_smoke.py` for the chat round-trip.
 
 ## 5. Close (10s)
-"RAVEN: verified context passports for the agentic web. ~93% fewer tokens, decisions
+"RAVEN: verified context passports for the agentic web. ~94% fewer tokens, decisions
 preserved, and a real agent on Fetch's network today."
 
 ---

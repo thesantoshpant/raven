@@ -44,5 +44,6 @@ CRITICAL_TYPES = {
     "restaurant": {"dietary"},
     "calendar": {"availability"},
     "budget": {"budget_limit", "permission"},
-    "writer": set(),
+    # the writer/summarizer must retain every standing constraint, even ones BM25 scores 0
+    "writer": {"dietary", "budget_limit", "availability", "permission"},
 }

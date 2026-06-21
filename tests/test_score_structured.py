@@ -37,6 +37,15 @@ def test_fallback_to_free_form_only_for_pure_text_plans():
     assert n == 5  # no structured fields at all -> free-form fallback resolves them
 
 
+def test_is_true_accepts_stringy_booleans():
+    specs = [{"id": "v", "field": "dietary_ok", "structured": {"type": "is_true"}}]
+    assert score_structured({"dietary_ok": True}, specs)[1] == 1
+    assert score_structured({"dietary_ok": "true"}, specs)[1] == 1
+    assert score_structured({"dietary_ok": "yes"}, specs)[1] == 1
+    assert score_structured({"dietary_ok": "false"}, specs)[1] == 0
+    assert score_structured({"dietary_ok": False}, specs)[1] == 0
+
+
 def test_missing_venue_does_not_pass_vacuously():
     # Structured plan where the restaurant agent chose NO venue: dietary/price/quiet
     # are None. Those must FAIL (not vacuously pass not_loud via free-form on stub text).

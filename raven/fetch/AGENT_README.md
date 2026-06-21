@@ -12,7 +12,8 @@ cost savings, token savings, LLM context window, retrieval, RAG alternative.
 ## What it does
 - Takes a messy memory blob + a target role (e.g. `restaurant`, `calendar`, `budget`, `writer`).
 - Returns a compact **passport**: the role's action-critical facts (hard constraints + risk
-  flags), with everything irrelevant dropped — typically **80–95% fewer context tokens**.
+  flags), with everything irrelevant dropped — typically **85–96% fewer context tokens** on a
+  realistic memory (short inputs may not net-compress).
 - Preserves the decision: standing rules (e.g. "always confirm before paying") are kept for
   the agent that needs them, even when they don't lexically match the task.
 

@@ -44,6 +44,14 @@ def test_per_person_price_is_not_a_budget_limit():
     assert classify("Keep dinners under $40.") == "budget_limit"  # a real cap still is
 
 
+def test_24h_times_and_weekdays_are_availability():
+    assert classify("Free Friday at 19:00.") == "availability"
+    assert classify("Meeting from 14:00 to 16:00.") == "availability"
+    assert classify("Let's meet Tuesday.") == "availability"
+    # no false positives from the weekday rule:
+    assert classify("The wedding was lovely.") != "availability"
+
+
 def test_budget_passport_excludes_expense_receipts():
     corpus = load_corpus(os.path.join(DATA, "corpus_friday_dinner.json"))
     facts = ingest_corpus(corpus)

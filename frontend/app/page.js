@@ -7,11 +7,19 @@ function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function Highlighted({ text, phrases }) {
+// Build a fresh highlight regex. Word boundaries are added only where a phrase edge is a
+// word char (so "loud" doesn't match inside "cloud", but "$40"/"5:30" still match).
+function highlightRegex(phrases) {
   const list = (phrases || []).filter(Boolean).slice().sort((a, b) => b.length - a.length);
-  if (!list.length) return <>{text}</>;
-  const re = new RegExp(`(${list.map(escapeRe).join("|")})`, "gi");
-  const low = new Set(list.map((p) => p.toLowerCase()));
+  if (!list.length) return null;
+  const term = (p) => (/^\w/.test(p) ? "\\b" : "") + escapeRe(p) + (/\w$/.test(p) ? "\\b" : "");
+  return new RegExp(`(${list.map(term).join("|")})`, "gi");
+}
+
+function Highlighted({ text, phrases }) {
+  const re = highlightRegex(phrases);
+  if (!re) return <>{text}</>;
+  const low = new Set((phrases || []).filter(Boolean).map((p) => p.toLowerCase()));
   const parts = String(text).split(re);
   return (
     <>
@@ -35,7 +43,7 @@ const ROLE_ICON = {
 function MemoryPane({ scenario, onUpload, uploading, uploadErr, uploadMsg }) {
   if (!scenario) return <div className="panel"><h2>User memory</h2><div className="muted">loading…</div></div>;
   const phrases = scenario.highlights || [];
-  const hasGold = (t) => phrases.some((p) => t.toLowerCase().includes(p.toLowerCase()));
+  const hasGold = (t) => { const r = highlightRegex(phrases); return r ? r.test(t) : false; };
   return (
     <div className="panel">
       <h2>User memory <span className="count">{scenario.counts.items} items · {scenario.counts.facts} facts</span></h2>
@@ -76,7 +84,7 @@ function AgentsPane({ passports, error }) {
             <span className="role">{ROLE_ICON[r.role] || null}{r.role}</span>
             <span className="pill">{r.tokens} tok · −{r.saved_pct}%</span>
           </div>
-          <div className="sub">sees {r.facts.length} facts · denied {r.excluded_count} · ~${r.est_usd_per_send}/send</div>
+          <div className="sub">sees {r.facts.length} facts · denied {r.excluded_count} · ~${Number(r.est_usd_per_send).toFixed(4)}/send</div>
           {open === r.role && (
             <div className="passport">
               {r.facts.map((f, i) => (
@@ -106,7 +114,7 @@ function Meter({ passports, error }) {
       <div className="bar raven" style={{ width: ravenW + "%" }} />
       <div style={{ marginTop: 16 }}>
         <div className="bigstat good">{savedPct}%</div>
-        <div className="statline">fewer context tokens delivered across the workflow</div>
+        <div className="statline">fewer context tokens vs sending full memory to all {n} agents (incl. the summarizer; the benchmark below runs the 3 decision agents)</div>
       </div>
     </div>
   );
@@ -165,6 +173,7 @@ function Benchmark() {
           <div className="note">
             RAVEN matches raw&apos;s decision quality at a fraction of the recurring cost; generic, at the
             same per-agent budget ({data.per_agent_budget} tok), drops the standing &quot;confirm before paying&quot; rule.
+            <br />Recurring agent cost shown; the optional verifier&apos;s one-time cost is reported in <code>bench/run_m2.py</code>.
             <br />$ is a rough estimate; tokens are the real metric.
           </div>
         </div>

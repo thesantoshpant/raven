@@ -60,6 +60,12 @@ def verify_and_repair(
     full_ctx = "\n".join(f.text for f in all_facts)
 
     for probe in ROLE_PROBES.get(role, []):
+        present_types = {facts_by_id[fid].type for fid in passport.facts if fid in facts_by_id}
+        if probe["type"] in present_types:
+            # The static guard already kept this type -> it's covered. Skip the probe
+            # entirely (don't spend tokens, don't add a redundant duplicate). The verifier
+            # only fires on a GENUINELY missing type.
+            continue
         passport_ctx = render_passport(passport, facts_by_id)
         a_full, t1 = _answer(llm, probe["question"], full_ctx)
         a_pass, t2 = _answer(llm, probe["question"], passport_ctx)

@@ -42,7 +42,7 @@ tests/        pytest suite (stdlib path, offline)
 ```
 
 ## Honest notes / limitations (M1)
-- **Apples-to-apples is per-send and the N-send total.** Per send, a RAVEN passport is ~93% smaller than the full memory; across the 4-agent workflow, RAVEN's total is ~93% below `raw_broadcast` (full memory to every agent). Even vs `raw_once` (an *optimistic* single shared full payload), RAVEN's total is ~74.5% lower. (Current corpus: 38 items / 127 facts; numbers from `bench/run_gate.py`, fallback tokenizer.)
+- **Apples-to-apples is per-send and the N-send total.** Per send, a RAVEN passport is ~93% smaller than the full memory; across the 4-agent workflow, RAVEN's total is ~93% below `raw_broadcast` (full memory to every agent). Even vs `raw_once` (an *optimistic* single shared full payload), RAVEN's total is ~71.5% lower. (Current corpus: 38 items / 127 facts; numbers from `bench/run_gate.py`, fallback tokenizer.)
 - **At equal budget, RAVEN ties the fair baseline on tokens** (`generic_factstore_unaware` ≈ RAVEN). That's expected: the token win is shared by *any* equal-budget fact-store selection. RAVEN's real differentiator is **recipient-aware decision quality at that budget**, which **M2** measures — M1 does not claim it.
 - The fallback tokenizer is an approximation; the gate is **ratio-based** and uses one counter across all conditions. Install `tiktoken` for exact counts (ratios stay close).
 - This is a **single (now larger) hand-authored scenario**; M1's token saving is **budget-driven (scenario-independent)**. Generality needs a second scenario + the M2 quality result.
@@ -57,7 +57,7 @@ Run with `.venv\Scripts\python bench\run_m2.py` (uses `ANTHROPIC_API_KEY`).
 |---|---|---|
 | raw (full memory to each agent) | 5/5 | 8308 |
 | generic (role-unaware, equal budget) | 4/5 (misses *confirm before paying*) | 960 |
-| **RAVEN (recipient-aware)** | **5/5** | **1030** |
+| **RAVEN (recipient-aware)** | **5/5** | **1022** |
 
 RAVEN matches raw's 5/5 at **~88% lower recurring cost**; generic, at the *same* per-agent
 budget, drops a constraint. The win is RAVEN's **recipient-aware guard** (learnable role
@@ -72,8 +72,9 @@ Honest notes:
   to the budget agent. A stronger role-unaware baseline (embeddings) and more scenarios are
   future work.
 - The **verifier is an OPTIONAL one-time safety net** (defense-in-depth). In this scenario it
-  changed no decision (the guard already kept the criticals) and amortizes vs raw by request #2.
-  Reported separately; RAVEN's first run including the verifier is 9322 tok, recurring 1030 tok/task.
+  adds **0 tokens** — the recipient-aware guard already keeps every action-critical fact, so it
+  has nothing to repair (first-run = recurring = 1022 tok). It only fires on a genuinely missing
+  type (see `tests/test_verifier.py`).
 - Tests stay **offline** (`FakeLLM`); only `bench/run_m2.py` calls the real API. The response
   cache (`.llmcache/`) is git-ignored (it holds private-corpus responses).
 
@@ -88,10 +89,10 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   |---|---|---|
   | full_transcript (naive) | 8560 | yes, but huge |
   | last_message only | 183 | 1/3 hops (drops standing rules) |
-  | **RAVEN RELAY** | 751 | **3/3 hops** |
+  | **RAVEN RELAY** | 889 | **3/3 hops** |
 
   RELAY costs a little more than last-message-only but **preserves the standing back-context
-  constraints last-message silently drops**, at ~91% below the full-transcript broadcast.
+  constraints last-message silently drops**, at ~90% below the full-transcript broadcast.
   Savings are scale-driven (a passport has ~25–30 tok of fixed structure).
 - **Fetch.ai (layered).** `raven/fetch/raven_agent.py` is a Chat-Protocol uAgent
   (mailbox → Agentverse → ASI:One discovery); `raven/fetch/bureau_demo.py` runs a local

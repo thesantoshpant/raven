@@ -103,11 +103,14 @@ def _time_hour(text: str) -> "int | None":
 def _structured_ok(value, rule: dict) -> bool:
     t = rule.get("type")
     if t == "is_true":
-        return value is True
+        if isinstance(value, bool):
+            return value
+        # tolerate stringified/numeric booleans from an LLM ("true"/"yes"/1); reject false-ish
+        return str(value).strip().lower() in {"true", "yes", "y", "1"}
     if t == "max_dollar":
         try:
             return float(value) <= float(rule["value"])
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, KeyError):
             return False
     if t == "time_after":
         h = _time_hour(str(value))

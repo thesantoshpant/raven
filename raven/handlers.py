@@ -8,6 +8,7 @@ the brains here means the behaviour is fully unit-testable offline.
 from __future__ import annotations
 
 import json
+import re
 from typing import Dict, Tuple
 
 from .relay import build_relay_passport
@@ -15,14 +16,25 @@ from .roles import ROLES
 
 _HELP = (
     "Send your memory/context to compress. Example:\n"
-    "  role: budget\n  task: plan a friday dinner\n"
-    "  memory: Maya is vegetarian. Keep dinners under $40. Always confirm before paying."
+    "  role: budget | task: plan a friday dinner | memory: Maya is vegetarian. "
+    "Keep dinners under $40. Always confirm before paying.\n"
+    "(role/task/memory markers are optional and can appear anywhere; plain text is "
+    "treated as memory for the 'writer' role.)"
 )
+
+_MAX_MEMORY_CHARS = 12_000  # cap pasted input so a huge blob can't block the agent loop
+_MENTION = re.compile(r"^\s*@\S+\s*")
+_ROLE = re.compile(r"\brole\s*[:=]\s*(\S+)", re.I)
+_TASK = re.compile(r"\btask\s*[:=]\s*(.+?)(?=\b(?:memory|role)\s*[:=]|$)", re.I | re.S)
+_MEMORY = re.compile(r"\bmemory\s*[:=]\s*(.+)$", re.I | re.S)
 
 
 def _parse(text: str) -> Tuple[str, str, str]:
-    """Return (role, task, memory). Accepts JSON {role,task,memory} or line markers
-    'role:'/'task:'/'memory:'; everything else is treated as memory."""
+    """Return (role, task, memory). Robust to the way real chats arrive:
+    - JSON {role,task,memory};
+    - a leading @agent mention (ASI:One/Agentverse prepend it) is stripped;
+    - role/task/memory markers anywhere (single-line OR multi-line, ':' or '=');
+    - plain text with no markers -> the whole thing is memory (role defaults to writer)."""
     text = (text or "").strip()
     try:
         d = json.loads(text)
@@ -32,22 +44,27 @@ def _parse(text: str) -> Tuple[str, str, str]:
     except (json.JSONDecodeError, ValueError):
         pass
 
+    text = _MENTION.sub("", text)  # drop a leading "@agent1q..." mention
     role, task = "writer", "general task"
-    mem = []
-    for ln in text.splitlines():
-        s = ln.strip()
-        low = s.lower()
-        if low.startswith("role:") or low.startswith("role="):
-            role = s.split("=", 1)[-1].split(":", 1)[-1].strip() or role
-        elif low.startswith("task:") or low.startswith("task="):
-            task = s.split("=", 1)[-1].split(":", 1)[-1].strip() or task
-        elif low.startswith("memory:") or low.startswith("memory="):
-            rest = s.split("=", 1)[-1].split(":", 1)[-1].strip()
-            if rest:
-                mem.append(rest)
-        elif s:
-            mem.append(s)
-    return role, task, "\n".join(mem)
+
+    rm = _ROLE.search(text)
+    if rm:  # remove the role marker regardless of validity; only SET role if known
+        if rm.group(1).lower() in ROLES:
+            role = rm.group(1).lower()
+        text = text[:rm.start()] + " " + text[rm.end():]
+
+    tm = _TASK.search(text)
+    if tm:
+        task = tm.group(1).strip() or task
+        text = text[:tm.start()] + " " + text[tm.end():]
+
+    mm = _MEMORY.search(text)
+    if mm:
+        leftover = text[:mm.start()].strip()
+        memory = (leftover + " " + mm.group(1).strip()).strip() if leftover else mm.group(1).strip()
+    else:
+        memory = text.strip()
+    return role, task, " ".join(memory.split())
 
 
 def handle_compress_request(text: str, backend: str = "fallback") -> Tuple[str, Dict]:
@@ -56,6 +73,7 @@ def handle_compress_request(text: str, backend: str = "fallback") -> Tuple[str, 
     role, task, memory = _parse(text)
     if role not in ROLES:
         role = "writer"
+    memory = memory[:_MAX_MEMORY_CHARS]  # bound work so a huge paste can't stall the agent
     if not memory.strip():
         return _HELP, {"ok": False, "reason": "no memory supplied"}
 
