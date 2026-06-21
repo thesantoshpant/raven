@@ -22,6 +22,16 @@ function Highlighted({ text, phrases }) {
   );
 }
 
+const svg = (children) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+);
+const ROLE_ICON = {
+  restaurant: svg(<><path d="M4 3v8M7 3v8M5.5 3v8M5.5 11v10M18 3c-1.6 0-2.5 2.2-2.5 5.5S16.4 13 18 13v8" /></>),
+  calendar: svg(<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></>),
+  budget: svg(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M16 14.5h2" /></>),
+  writer: svg(<><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>),
+};
+
 function MemoryPane({ scenario, onUpload, uploading, uploadErr, uploadMsg }) {
   if (!scenario) return <div className="panel"><h2>User memory</h2><div className="muted">loading…</div></div>;
   const phrases = scenario.highlights || [];
@@ -63,7 +73,7 @@ function AgentsPane({ passports, error }) {
       {passports.roles.map((r) => (
         <div key={r.role} className={"agentcard" + (open === r.role ? " open" : "")} onClick={() => setOpen(open === r.role ? null : r.role)}>
           <div className="row">
-            <span className="role">{r.role}</span>
+            <span className="role">{ROLE_ICON[r.role] || null}{r.role}</span>
             <span className="pill">{r.tokens} tok · −{r.saved_pct}%</span>
           </div>
           <div className="sub">sees {r.facts.length} facts · denied {r.excluded_count} · ~${r.est_usd_per_send}/send</div>
@@ -90,13 +100,13 @@ function Meter({ passports, error }) {
   const ravenW = Math.max(6, Math.round((ravenTotal / rawBroadcast) * 100));
   return (
     <div className="meter">
-      <div className="bar label">Raw — full memory to all {n} agents (incl. summarizer)</div>
-      <div className="bar raw" style={{ width: "100%" }}>{rawBroadcast.toLocaleString()} tok</div>
-      <div className="bar label" style={{ marginTop: 10 }}>RAVEN — tailored passports</div>
-      <div className="bar raven" style={{ width: ravenW + "%" }}>{ravenTotal.toLocaleString()} tok</div>
-      <div style={{ marginTop: 14 }}>
-        <span className="bigstat good">{savedPct}%</span>
-        <span className="statline"> fewer context tokens delivered across the workflow</span>
+      <div className="bar label"><span>Raw — full memory to all {n} agents</span><span className="v">{rawBroadcast.toLocaleString()} tok</span></div>
+      <div className="bar raw" style={{ width: "100%" }} />
+      <div className="bar label"><span>RAVEN — tailored passports</span><span className="v">{ravenTotal.toLocaleString()} tok</span></div>
+      <div className="bar raven" style={{ width: ravenW + "%" }} />
+      <div style={{ marginTop: 16 }}>
+        <div className="bigstat good">{savedPct}%</div>
+        <div className="statline">fewer context tokens delivered across the workflow</div>
       </div>
     </div>
   );
@@ -128,12 +138,18 @@ function Benchmark() {
             const d = data.conditions[c];
             if (!d) return null;
             const full = d.constraints === d.total;
+            const dots = Array.from({ length: d.total }, (_, i) => (
+              <span key={i} className={i < d.constraints ? (full ? "on" : "onbad") : "off"}>●</span>
+            ));
             return (
               <div className={"cond" + (c === "raven" ? " raven" : "")} key={c}>
-                <span className="name">{labels[c]}</span>
-                <span>
-                  <span className={"score " + (full ? "full" : "partial")}>{d.constraints}/{d.total}</span>
+                <div>
+                  <span className="name">{labels[c]}</span>
                   {d.missed.length > 0 && <div className="missed">missed: {d.missed.join(", ")}</div>}
+                </div>
+                <span>
+                  <span className={"score " + (full ? "full" : "partial")}>{d.constraints}/{d.total}</span>{" "}
+                  <span className="dots">{dots}</span>
                 </span>
                 <span className="toks">{d.agent_tokens.toLocaleString()} tok<br />~${d.est_usd}</span>
               </div>
@@ -156,10 +172,18 @@ function RelayView({ relay, error }) {
   const pr = relay.preservation;
   return (
     <div className="panel">
-      <h2>RELAY — agent → agent handoff compression</h2>
-      <div className="muted" style={{ marginBottom: 12 }}>
-        At each handoff, forward the upstream message + a recipient-aware compressed passport of the
-        back-context — instead of the whole growing transcript.
+      <h1 className="bighead">RELAY · agent → agent handoff compression</h1>
+      <p className="subhead">
+        Forward the latest message + a recipient-aware compressed passport of the back-context —
+        instead of the whole growing transcript.
+      </p>
+      <div className="impact">
+        <div>
+          <div className="lbl">Compression impact</div>
+          <div className="big">{t.saved_vs_full_pct}%</div>
+          <div className="muted">token savings vs the full-transcript broadcast</div>
+        </div>
+        <div className="side">Total full context: {t.full.toLocaleString()} tok<br />RAVEN relay: {t.relay.toLocaleString()} tok</div>
       </div>
       <table className="relay">
         <thead><tr><th>hop</th><th>full transcript</th><th>last message</th><th>RAVEN relay</th><th>vs full</th></tr></thead>
@@ -212,23 +236,27 @@ function CompressBox({ roles }) {
   };
 
   return (
-    <div className="panel">
-      <h2>Compress anything for an agent</h2>
-      <div className="muted" style={{ marginBottom: 8 }}>Paste a memory blob, pick a recipient role, get its passport.</div>
-      <select value={role} onChange={(e) => setRole(e.target.value)} style={{ marginBottom: 10 }}>
-        {(roles || ["restaurant", "calendar", "budget", "writer"]).map((r) => <option key={r} value={r}>{r}</option>)}
-      </select>
-      <textarea value={memory} onChange={(e) => setMemory(e.target.value)} />
-      <button className="btn" style={{ marginTop: 10 }} onClick={run} disabled={loading}>
-        {loading ? <><span className="spinner" />compressing…</> : "Compress"}
-      </button>
-      {err && <div className="toast">⚠ {err}</div>}
-      {out && (
-        <div style={{ marginTop: 12 }}>
-          <div className="muted">facts kept: {out.stats.facts ?? 0} · {out.stats.relayed_tokens} tok (raw {out.stats.raw_tokens})</div>
-          <pre style={{ whiteSpace: "pre-wrap", background: "#070b12", border: "1px solid var(--border)", borderRadius: 8, padding: 10, fontSize: 12, marginTop: 6 }}>{out.reply}</pre>
-        </div>
-      )}
+    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+      <div className="panel">
+        <h1 className="bighead">Compress anything for an agent</h1>
+        <p className="subhead">Paste a memory blob, pick a recipient role, get its passport.</p>
+        <div className="muted" style={{ marginBottom: 6 }}>Recipient role</div>
+        <select value={role} onChange={(e) => setRole(e.target.value)} style={{ marginBottom: 14 }}>
+          {(roles || ["restaurant", "calendar", "budget", "writer"]).map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <div className="muted" style={{ marginBottom: 6 }}>Memory blob</div>
+        <textarea value={memory} onChange={(e) => setMemory(e.target.value)} />
+        <button className="btn" style={{ marginTop: 14 }} onClick={run} disabled={loading}>
+          {loading ? <><span className="spinner" />compressing…</> : "Compress"}
+        </button>
+        {err && <div className="toast">⚠ {err}</div>}
+        {out && (
+          <div style={{ marginTop: 16 }}>
+            <div className="muted">facts kept: {out.stats.facts ?? 0} · {out.stats.relayed_tokens} tok (raw {out.stats.raw_tokens})</div>
+            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-mono)", background: "var(--sunken)", color: "var(--ink)", border: "1px solid var(--border)", borderRadius: 8, padding: 12, fontSize: 12.5, lineHeight: 1.55, marginTop: 8 }}>{out.reply}</pre>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -309,6 +337,11 @@ export default function Home() {
 
       {tab === "relay" && <RelayView relay={relay} error={rErr} />}
       {tab === "compress" && <CompressBox roles={scenario?.roles} />}
+
+      <footer className="foot">
+        <span>Fetch.ai · ASI:One</span>
+        <span><a href="#">Documentation</a><a href="#">Privacy</a><a href="#">Terms</a></span>
+      </footer>
     </div>
   );
 }
