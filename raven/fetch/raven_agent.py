@@ -32,9 +32,10 @@ from raven.handlers import handle_compress_request  # noqa: E402
 SEED = os.environ.get("RAVEN_AGENT_SEED", "raven-context-passport-agent-seed-0001")
 
 
-def build_agent():
+def build_agent(mailbox: bool = True, port: int = 8001):
     """Construct and wire the Chat-Protocol uAgent. Imports uagents lazily so module
-    import stays side-effect-free."""
+    import stays side-effect-free. Pass mailbox=False, port=None for a purely-local
+    (no network) instance, e.g. inside a Bureau for chat_smoke.py."""
     from uagents import Agent, Context, Protocol
     from uagents_core.contrib.protocols.chat import (
         ChatAcknowledgement,
@@ -44,8 +45,11 @@ def build_agent():
         chat_protocol_spec,
     )
 
-    agent = Agent(name="raven-context-compressor", seed=SEED, port=8001,
-                  mailbox=True, publish_agent_details=True)
+    kwargs = dict(name="raven-context-compressor", seed=SEED, mailbox=mailbox,
+                  publish_agent_details=mailbox)
+    if port is not None:
+        kwargs["port"] = port
+    agent = Agent(**kwargs)
     protocol = Protocol(spec=chat_protocol_spec)
 
     def _text_of(msg: ChatMessage) -> str:
