@@ -46,6 +46,18 @@ def classify(sentence: str) -> str:
     return "other"
 
 
+def classify_all(sentence: str) -> List[str]:
+    """Multi-label: EVERY type whose pattern matches (in rule order, deduped).
+
+    The corpus path uses single-label `classify` (its sentences are already atomic).
+    The RELAY/agent path uses this so a combined, judge-pasted sentence stating several
+    constraints ("Maya is vegetarian and keep dinner under $40 and confirm before paying")
+    yields a fact per constraint instead of collapsing to a single first-match type.
+    """
+    out = [ftype for ftype, rx in _TYPE_RULES if rx.search(sentence)]
+    return out or ["other"]
+
+
 def split_sentences(text: str) -> List[str]:
     """Public sentence splitter (atomic-fact granularity). Drops <3 char fragments."""
     return [s.strip() for s in _SENT_SPLIT.split(text or "") if len(s.strip()) >= 3]

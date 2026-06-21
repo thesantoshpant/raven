@@ -47,3 +47,20 @@ def test_compress_request_tiny_input_makes_no_false_savings_claim():
 def test_unknown_role_defaults_to_writer():
     reply, stats = handle_compress_request("role: wizard\nmemory: I like quiet cafes and tea.")
     assert stats["ok"] is True and stats["role"] == "writer"
+
+
+def test_combined_sentence_does_not_yield_empty_budget_passport():
+    # Regression: a single combined sentence used to classify as ONE type (dietary) and
+    # leave the budget passport empty while still claiming success.
+    reply, stats = handle_compress_request(
+        "role: budget\nmemory: Maya is vegetarian and keep dinner under $40 and always confirm before paying."
+    )
+    assert stats["ok"] is True and stats["facts"] >= 1
+    assert "$40" in reply and "confirm" in reply.lower()
+
+
+def test_irrelevant_memory_reports_empty_honestly():
+    reply, stats = handle_compress_request("role: budget\nmemory: The weather is nice and the sky is blue.")
+    assert stats["ok"] is True and stats["facts"] == 0
+    assert "no facts" in reply.lower() and "relevant" in reply.lower()
+    assert stats["saved_tokens"] == 0  # must NOT claim savings on an empty passport

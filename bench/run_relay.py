@@ -27,8 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from raven.ingest import load_corpus  # noqa: E402
 from raven.baselines import serialize_corpus  # noqa: E402
-from raven.relay import build_relay_passport  # noqa: E402
-from raven.tokens import count_tokens  # noqa: E402
+from raven.relay import build_relay_handoff  # noqa: E402
 
 DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 TASK = "plan a friday dinner with maya"
@@ -69,22 +68,17 @@ def main():
     tot_full = tot_last = tot_relay = 0
     relay_keeps = last_keeps = 0
     for to_role, prior, msg in hops:
-        full = count_tokens((prior + "\n" + msg).strip(), backend="fallback")
-        last = count_tokens(msg, backend="fallback")
-        # RELAY = recipient-aware compressed back-context + the latest message VERBATIM (message floor).
-        prior_res = build_relay_passport(prior, TASK, to_role, backend="fallback")
-        relay_text = prior_res.passport_text + (f"\n\nLATEST FROM UPSTREAM:\n{msg}" if msg.strip() else "")
-        relay = count_tokens(relay_text, backend="fallback")
-
-        tot_full += full
-        tot_last += last
-        tot_relay += relay
+        # The real handoff API: latest message verbatim (floor) + compressed back-context.
+        h = build_relay_handoff(prior, msg, TASK, to_role, backend="fallback")
+        tot_full += h.raw_tokens
+        tot_last += h.last_message_tokens
+        tot_relay += h.relayed_tokens
         # Does each strategy still carry the early back-context constraint at this hop?
-        relay_keeps += int(BACKCTX_PROBE in relay_text.lower())
+        relay_keeps += int(BACKCTX_PROBE in h.handoff_text.lower())
         last_keeps += int(BACKCTX_PROBE in msg.lower())
 
-        vs_full = (1 - relay / full) * 100 if full else 0.0
-        print(f"{'-> ' + to_role:<14}{full:>16}{last:>14}{relay:>13}{f'{vs_full:.0f}%':>9}")
+        print(f"{'-> ' + to_role:<14}{h.raw_tokens:>16}{h.last_message_tokens:>14}"
+              f"{h.relayed_tokens:>13}{f'{h.saved_vs_full_pct:.0f}%':>9}")
 
     print("-" * len(header))
     print(f"{'TOTAL':<14}{tot_full:>16}{tot_last:>14}{tot_relay:>13}"

@@ -60,6 +60,13 @@ def handle_compress_request(text: str, backend: str = "fallback") -> Tuple[str, 
         return _HELP, {"ok": False, "reason": "no memory supplied"}
 
     res = build_relay_passport(memory, task, role, backend=backend)
+    if not res.fact_ids:
+        return (
+            f"No facts in your memory were relevant to the '{role}' agent. "
+            f"Try a different role, or include {role}-relevant details.",
+            {"ok": True, "role": role, "facts": 0, "raw_tokens": res.raw_tokens,
+             "relayed_tokens": 0, "saved_tokens": 0, "saved_pct": 0.0},
+        )
     if res.saved_tokens > 0:
         tokens_line = f"{res.relayed_tokens} tokens, saved {res.saved_pct:.0f}% vs raw {res.raw_tokens}"
     else:
@@ -75,6 +82,7 @@ def handle_compress_request(text: str, backend: str = "fallback") -> Tuple[str, 
     stats = {
         "ok": True,
         "role": role,
+        "facts": len(res.fact_ids),
         "raw_tokens": res.raw_tokens,
         "relayed_tokens": res.relayed_tokens,
         "saved_tokens": res.saved_tokens,

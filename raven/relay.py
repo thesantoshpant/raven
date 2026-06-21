@@ -1,36 +1,47 @@
 """RELAY: the SECOND compression edge -- agent -> agent handoffs.
 
-When agent A hands off to agent B, the naive thing is to forward the whole running
-context/transcript. RELAY instead compresses that handoff into a recipient-aware
-passport for B's role (reusing the M1 passport machinery), so multi-agent comms cost
-collapses while B still receives its action-critical facts.
+Two operations:
+  * build_relay_passport(context, task, role)  -- compress a context blob into a
+    recipient-aware passport for `role` (used by the user-facing agent / handlers).
+  * build_relay_handoff(prior_context, latest_message, task, role) -- the real handoff:
+    ALWAYS forward the latest upstream message verbatim (the "message floor") PLUS a
+    recipient-aware compressed passport of the back-context. Used by the Bureau demo
+    and the RELAY bench.
 
-Pure + offline: reuses `ingest.classify` + `compress.build_passport/render_passport`.
+Pure + offline: reuses `ingest.classify_all/split_sentences` + the M1 passport machinery.
+Fact IDs are globally unique per process so a multi-hop handoff never overwrites an
+earlier fact in a by-id lookup.
 """
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass
 from typing import List, Optional
 
 from .compress import build_passport, render_passport
-from .ingest import classify, split_sentences
+from .ingest import classify_all, split_sentences
 from .schemas import Fact
 from .tokens import count_tokens
 
+_FACT_COUNTER = itertools.count()  # process-global -> IDs never collide across hops/calls
 
-def facts_from_text(text: str, source_ref: str = "upstream", start_idx: int = 0) -> List[Fact]:
-    """Atomize an upstream agent's output into typed facts (sentence split + classify)."""
+
+def facts_from_text(text: str, source_ref: str = "upstream") -> List[Fact]:
+    """Atomize text into typed facts. Multi-label: a sentence stating N constraints
+    yields N facts (same span, one per matched type). IDs are globally unique."""
     out: List[Fact] = []
-    for i, s in enumerate(split_sentences(text), start=start_idx):
-        out.append(Fact(fact_id=f"relay{i}", text=s, exact_span=s, source_ref=source_ref, type=classify(s)))
+    for s in split_sentences(text):
+        for ftype in classify_all(s):
+            out.append(Fact(fact_id=f"relay{next(_FACT_COUNTER)}", text=s, exact_span=s,
+                            source_ref=source_ref, type=ftype))
     return out
 
 
 @dataclass
 class RelayResult:
     passport_text: str
-    raw_tokens: int       # forwarding the whole handoff
+    raw_tokens: int       # forwarding the whole context blob
     relayed_tokens: int   # the compressed recipient-aware passport
     saved_tokens: int
     saved_pct: float
@@ -38,24 +49,61 @@ class RelayResult:
 
 
 def build_relay_passport(
-    upstream_text: str,
+    context_text: str,
     task: str,
     to_role: str,
     prior_facts: Optional[List[Fact]] = None,
     backend: str = "fallback",
 ) -> RelayResult:
-    """Compress an upstream agent's output (+ any prior context facts) into a passport
-    for `to_role`. raw = the full handoff text; relayed = the rendered passport."""
-    up_facts = facts_from_text(upstream_text)
-    all_facts = list(prior_facts or []) + up_facts
-    raw_handoff = "\n".join(f.text for f in all_facts)
-    raw_tokens = count_tokens(raw_handoff, backend=backend)
+    """Compress a context blob into a recipient-aware passport for `to_role`."""
+    facts = list(prior_facts or []) + facts_from_text(context_text)
+    raw_tokens = count_tokens("\n".join(f.text for f in facts), backend=backend)
 
-    passport = build_passport(all_facts, task, to_role)
-    by_id = {f.fact_id: f for f in all_facts}
+    passport = build_passport(facts, task, to_role)
+    by_id = {f.fact_id: f for f in facts}
     rendered = render_passport(passport, by_id)
     relayed_tokens = count_tokens(rendered, backend=backend)
 
     saved = raw_tokens - relayed_tokens
     pct = (saved / raw_tokens * 100.0) if raw_tokens else 0.0
     return RelayResult(rendered, raw_tokens, relayed_tokens, saved, pct, list(passport.facts))
+
+
+@dataclass
+class HandoffResult:
+    handoff_text: str          # message floor + compressed back-context passport
+    raw_tokens: int            # forward the full handoff (prior + message)
+    last_message_tokens: int   # forward only the upstream message
+    relayed_tokens: int        # RELAY: compressed prior + verbatim message
+    saved_vs_full_pct: float
+    message_preserved: bool
+
+
+def build_relay_handoff(
+    prior_context: str,
+    latest_message: str,
+    task: str,
+    to_role: str,
+    backend: str = "fallback",
+) -> HandoffResult:
+    """The real agent->agent handoff: forward the latest message VERBATIM (floor) +
+    a recipient-aware compressed passport of the prior back-context. Guarantees the
+    latest upstream output is never dropped by role filtering."""
+    msg = (latest_message or "").strip()
+    prior_facts = facts_from_text(prior_context, source_ref="prior")
+
+    raw_text = "\n".join(f.text for f in prior_facts)
+    if msg:
+        raw_text = (raw_text + "\n" + msg).strip()
+    raw_tokens = count_tokens(raw_text, backend=backend)
+    last_message_tokens = count_tokens(msg, backend=backend)
+
+    prior_passport = build_passport(prior_facts, task, to_role)
+    by_id = {f.fact_id: f for f in prior_facts}
+    prior_text = render_passport(prior_passport, by_id)
+    handoff_text = prior_text + (f"\n\nLATEST FROM UPSTREAM:\n{msg}" if msg else "")
+    relayed_tokens = count_tokens(handoff_text, backend=backend)
+
+    saved = (1 - relayed_tokens / raw_tokens) * 100.0 if raw_tokens else 0.0
+    message_preserved = (not msg) or (msg in handoff_text)
+    return HandoffResult(handoff_text, raw_tokens, last_message_tokens, relayed_tokens, saved, message_preserved)

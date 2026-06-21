@@ -56,10 +56,10 @@ Run with `.venv\Scripts\python bench\run_m2.py` (uses `ANTHROPIC_API_KEY`).
 | condition | constraints | recurring agent tokens |
 |---|---|---|
 | raw (full memory to each agent) | 5/5 | 8308 |
-| generic (role-unaware, equal budget) | 4/5 (misses *confirm before paying*) | 1114 |
-| **RAVEN (recipient-aware)** | **5/5** | **1177** |
+| generic (role-unaware, equal budget) | 4/5 (misses *confirm before paying*) | 960 |
+| **RAVEN (recipient-aware)** | **5/5** | **1030** |
 
-RAVEN matches raw's 5/5 at **~86% lower recurring cost**; generic, at the *same* per-agent
+RAVEN matches raw's 5/5 at **~88% lower recurring cost**; generic, at the *same* per-agent
 budget, drops a constraint. The win is RAVEN's **recipient-aware guard** (learnable role
 priors — not a per-scenario answer key) routing the standing "confirm before paying" rule to
 the budget agent — a rule the vague request never lexically surfaces, so the role-unaware blob
@@ -73,7 +73,7 @@ Honest notes:
   future work.
 - The **verifier is an OPTIONAL one-time safety net** (defense-in-depth). In this scenario it
   changed no decision (the guard already kept the criticals) and amortizes vs raw by request #2.
-  Reported separately; RAVEN's first run including the verifier is 9623 tok, recurring 1177 tok/task.
+  Reported separately; RAVEN's first run including the verifier is 9322 tok, recurring 1030 tok/task.
 - Tests stay **offline** (`FakeLLM`); only `bench/run_m2.py` calls the real API. The response
   cache (`.llmcache/`) is git-ignored (it holds private-corpus responses).
 
@@ -95,7 +95,9 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   Savings are scale-driven (a passport has ~25–30 tok of fixed structure).
 - **Fetch.ai (layered).** `raven/fetch/raven_agent.py` is a Chat-Protocol uAgent
   (mailbox → Agentverse → ASI:One discovery); `raven/fetch/bureau_demo.py` runs a local
-  two-agent uAgents Bureau with RAVEN RELAY on the wire (offline-safe, no account needed).
+  two-agent uAgents Bureau with RAVEN RELAY on the wire — no Agentverse account; use
+  `--once` for a bounded run that exits after the decision (uAgents still binds a local
+  port and logs like a server, so it is not a pure offline function).
 - **Redis.** `make_fact_store()` returns a `RedisFactStore` when `RAVEN_REDIS_URL` is set and
   reachable, else falls back to in-memory (default) — never breaks if Redis/Docker is absent.
 - **Cleaner passports.** the `budget` type is split into `budget_limit` (caps) vs
