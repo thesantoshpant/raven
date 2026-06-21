@@ -50,6 +50,18 @@ def test_restaurant_agent_parses_and_accounts_tokens():
     assert out["tokens"] > 0
 
 
+def test_budget_agent_boolean_parsing():
+    def confirm(resp):
+        return run_budget_agent(FakeLLM(lambda s, u: resp), "ctx", "plan")["requires_confirmation"]
+
+    assert confirm('{"requires_confirmation": true}') is True
+    assert confirm('{"requires_confirmation": false}') is False
+    assert confirm('{"requires_confirmation": "false"}') is False  # bool("false") would be True
+    assert confirm('{"requires_confirmation": "true"}') is True
+    assert confirm("{}") is False              # missing key
+    assert confirm("not json at all") is False  # malformed -> {} -> False
+
+
 def test_aggregate_uses_ground_truth_venue_attrs():
     plan = aggregate(
         {"venue_id": "green_bowl"}, {"time": "19:00"}, {"requires_confirmation": True}, VENUES_BY_ID

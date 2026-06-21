@@ -9,8 +9,9 @@ API (ANTHROPIC_API_KEY); responses are cached so re-runs are free/repeatable.
   raven   - recipient-aware passport per agent + the verifier loop
 
 Honest framing: M1 showed RAVEN ties generic on TOKENS at equal budget; M2 asks
-whether RAVEN preserves more of the DECISION at that budget. Verifier tokens are
-counted in RAVEN's total.
+whether RAVEN preserves more of the DECISION at that budget. The headline table is
+RECURRING agent cost; the verifier's ONE-TIME cost is reported and amortized
+separately, and the first-run total INCLUDING it is printed explicitly.
 
 Run from the repo root:  python bench/run_m2.py
 """
@@ -131,6 +132,8 @@ def run():
             f"\nVerifier (OPTIONAL safety net, ONE-TIME cost {verifier_tokens} tok): re-added/learned "
             f"= {learned_all or 'nothing -- the guard already kept every action-critical fact here'}."
         )
+        print(f"  RAVEN first run incl. one-time verifier: {rav_rec + verifier_tokens} tok; "
+              f"recurring thereafter: {rav_rec} tok/task.")
         if saving > 0:
             be = -(-verifier_tokens // saving)  # ceil
             print(f"  Amortizes vs raw by request #{be} (recurring saving {saving} tok/task).")

@@ -35,6 +35,18 @@ def _toks(res) -> int:
     return res.input_tokens + res.output_tokens
 
 
+def _as_bool(v) -> bool:
+    """Robust boolean parse. Critically, bool('false') is True in Python, so a model
+    that returns the JSON value as the STRING 'false' must NOT become True."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return bool(v)
+    if isinstance(v, str):
+        return v.strip().lower() in ("true", "yes", "y", "1")
+    return False
+
+
 def run_restaurant_agent(
     llm: BaseLLM, context_text: str, request: str, candidates: List[dict], max_tokens: int = 200
 ) -> Dict:
@@ -70,7 +82,7 @@ def run_budget_agent(llm: BaseLLM, context_text: str, request: str, max_tokens: 
     )
     res = llm.complete(BUDGET_SYS, user, max_tokens)
     js = extract_json(res.text) or {}
-    return {"requires_confirmation": bool(js.get("requires_confirmation")), "tokens": _toks(res)}
+    return {"requires_confirmation": _as_bool(js.get("requires_confirmation")), "tokens": _toks(res)}
 
 
 def aggregate(

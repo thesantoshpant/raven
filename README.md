@@ -66,10 +66,14 @@ the budget agent — a rule the vague request never lexically surfaces, so the r
 misses it.
 
 Honest notes:
-- A **single existence-proof scenario**, not a success rate. A stronger role-unaware baseline
-  (embeddings) and more scenarios are future work.
+- This is an **existence proof**, not broad proof. The measured gap is **exactly one
+  constraint** — the standing "confirm before paying" rule, which has ~zero lexical overlap
+  with the vague request, so task-only (role-unaware) ranking buries it while RAVEN routes it
+  to the budget agent. A stronger role-unaware baseline (embeddings) and more scenarios are
+  future work.
 - The **verifier is an OPTIONAL one-time safety net** (defense-in-depth). In this scenario it
   changed no decision (the guard already kept the criticals) and amortizes vs raw by request #2.
+  Reported separately; RAVEN's first run including the verifier is 9623 tok, recurring 1177 tok/task.
 - Tests stay **offline** (`FakeLLM`); only `bench/run_m2.py` calls the real API. The response
   cache (`.llmcache/`) is git-ignored (it holds private-corpus responses).
 
