@@ -105,7 +105,7 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   passport (a cap that mentions spending, e.g. "budget is $40 but I spent $60", stays a cap).
 
 The Fetch layer (`uagents`, `redis`) is **optional** (`requirements-fetch.txt`); the core, the
-gate, M2, and the **74-test** suite stay stdlib + offline (no `uagents`/`redis`/network).
+gate, M2, and the **79-test** suite (1 Redis live-test skipped) stay stdlib + offline (no `uagents`/`redis`/network).
 
 ## Milestone 4 (done): the live demo UI
 A two-server app — a FastAPI backend (`raven/web/`) over the M1–M3 engine + a Next.js
@@ -130,8 +130,10 @@ test suite never imports fastapi.
 cd frontend && npm install && npm run dev                          # UI :3000  -> open it
 ```
 Warm the cache first (click "Run benchmark" once) so the stage run is instant. `/api/benchmark`
-is server-side cooldown'd to avoid accidental live spend. Next 14.2.15 carries dev-server
-advisories that don't apply to this local, no-middleware demo; bump post-event if desired.
+is server-side cooldown'd to avoid accidental live spend. **Security:** Next 14.2.15 has known
+advisories (incl. a critical) — this is **local-demo-only, risk accepted; do NOT deploy it
+publicly as-is.** Bump Next after the event. If port 3000 is busy, run `npm run dev -- -p 3000`
+(the backend's CORS allows 3000/3001).
 
 ## Roadmap
 - **M5** MarkItDown PDF→MD ingestion + polish.

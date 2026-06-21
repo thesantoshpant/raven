@@ -155,10 +155,10 @@ def run_benchmark(llm: BaseLLM) -> dict:
     by_id = {f.fact_id: f for f in facts}
 
     agent_roles = ["restaurant", "calendar", "budget"]
-    # NOTE: these are PRE-verifier passports. They equal bench/run_m2.py's budget as long as
-    # the verifier is a no-op (true in this scenario -- the static guard already keeps the
-    # criticals). If a future scenario needs the verifier to repair a passport, run that path
-    # here too so the per-agent budget stays in lockstep with the bench.
+    # NOTE: the UI uses the RECURRING no-verifier path (build_passport only). The full
+    # verifier's one-time cost is reported separately in M2 (bench/run_m2.py). If a future
+    # scenario needs the verifier to repair a passport, run that path here too so the
+    # per-agent budget stays in lockstep with the bench.
     raven_ctx = {r: render_passport(build_passport(facts, request, r), by_id) for r in agent_roles}
     per_agent_budget = max(1, round(sum(count_tokens(raven_ctx[r], "fallback") for r in agent_roles) / len(agent_roles)))
 
