@@ -39,7 +39,7 @@ agent (we call the second edge **RELAY**). It is **recipient-aware** (least priv
 Python (stdlib-first engine: dataclasses, BM25, deterministic scoring), Anthropic Claude
 (role agents, temp 0, disk-cached), **Fetch.ai uAgents + Agentverse + ASI:One** (RAVEN runs
 as a Chat-Protocol agent), optional **Redis** fact store, **FastAPI** + **Next.js** demo UI.
-74→79-test offline suite; honest, ratio-based benchmarks throughout.
+80+-test offline suite; honest, ratio-based benchmarks throughout.
 
 ## Sponsor fit
 - **Fetch.ai:** RAVEN is a first-class uAgent on Agentverse, discoverable from ASI:One via the

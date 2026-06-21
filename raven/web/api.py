@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -62,6 +62,24 @@ class CompressReq(BaseModel):
 @app.post("/api/compress")
 def compress(req: CompressReq):
     return services.compress(req.role, req.task, req.memory)
+
+
+@app.post("/api/ingest")
+async def ingest(file: UploadFile = File(...)):
+    """M5: upload a PDF/doc -> it becomes agent memory; passports recomputed."""
+    cap = 5_000_000
+    buf = bytearray()
+    while True:  # read in bounded chunks; reject BEFORE buffering the whole body
+        chunk = await file.read(65536)
+        if not chunk:
+            break
+        buf += chunk
+        if len(buf) > cap:
+            raise HTTPException(status_code=413, detail="File too large (5 MB max).")
+    try:
+        return services.ingest_document(bytes(buf), file.filename or "upload")
+    except RuntimeError as exc:  # markitdown missing / unsupported format
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.post("/api/benchmark")

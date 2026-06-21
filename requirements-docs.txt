@@ -1,0 +1,5 @@
+# OPTIONAL deps for M5 document ingestion (upload a PDF/doc -> memory).
+# NOT needed by the core, the gate, M2/M3, or the pytest suite. .md/.txt uploads work
+# without markitdown; python-multipart is required by FastAPI for the upload endpoint.
+markitdown[pdf,docx]>=0.1,<1
+python-multipart>=0.0.9

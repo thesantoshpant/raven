@@ -105,13 +105,15 @@ class AnthropicLLM(BaseLLM):
         # Prefer the SDK; fall back to stdlib urllib so there is no hard dependency.
         try:
             import anthropic  # type: ignore
-
+        except ImportError:
+            return self._call_urllib(api_key, body)
+        try:
             client = anthropic.Anthropic(api_key=api_key)
             resp = client.messages.create(**body)
             text = "".join(getattr(b, "text", "") for b in resp.content)
             return LLMResult(text, resp.usage.input_tokens, resp.usage.output_tokens)
-        except ImportError:
-            return self._call_urllib(api_key, body)
+        except Exception as exc:  # normalize SDK auth/HTTP errors to the RuntimeError contract
+            raise RuntimeError(f"Anthropic SDK error: {exc}") from exc
 
     @staticmethod
     def _call_urllib(api_key: str, body: dict) -> LLMResult:

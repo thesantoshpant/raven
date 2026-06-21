@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 
 function escapeRe(s) {
@@ -22,7 +22,7 @@ function Highlighted({ text, phrases }) {
   );
 }
 
-function MemoryPane({ scenario }) {
+function MemoryPane({ scenario, onUpload, uploading, uploadErr, uploadMsg }) {
   if (!scenario) return <div className="panel"><h2>User memory</h2><div className="muted">loading…</div></div>;
   const phrases = scenario.highlights || [];
   const hasGold = (t) => phrases.some((p) => t.toLowerCase().includes(p.toLowerCase()));
@@ -30,6 +30,15 @@ function MemoryPane({ scenario }) {
     <div className="panel">
       <h2>User memory <span className="count">{scenario.counts.items} items · {scenario.counts.facts} facts</span></h2>
       <div className="muted" style={{ marginBottom: 10 }}>Everything you&apos;d dump into an agent. The 5 decision-critical facts are buried (highlighted).</div>
+      <div style={{ marginBottom: 10 }}>
+        <label className="btn secondary" style={{ display: "inline-block", width: "auto", padding: "7px 12px", fontSize: 13, cursor: uploading ? "not-allowed" : "pointer" }}>
+          {uploading ? <><span className="spinner" />ingesting…</> : "+ Upload a PDF / doc → memory"}
+          <input type="file" accept=".pdf,.docx,.md,.txt,.html" style={{ display: "none" }} disabled={uploading}
+            onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) onUpload(f); e.target.value = ""; }} />
+        </label>
+        {uploadErr && <div className="toast">⚠ {uploadErr}</div>}
+        {uploadMsg && <div className="muted" style={{ marginTop: 6 }}>✓ {uploadMsg}</div>}
+      </div>
       <div className="memlist">
         {scenario.memory_items.map((it) => (
           <div key={it.id} className={"memitem" + (hasGold(it.text) ? " gold" : "")}>
@@ -232,12 +241,39 @@ export default function Home() {
   const [down, setDown] = useState(null);
   const [pErr, setPErr] = useState(null);
   const [rErr, setRErr] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState(null);
+  const [uploadMsg, setUploadMsg] = useState(null);
+  const baseRef = useRef(null);
 
   useEffect(() => {
-    api.scenario().then(setScenario).catch((e) => setDown(e.message));
+    api.scenario().then((s) => { baseRef.current = s; setScenario(s); }).catch((e) => setDown(e.message));
     api.passports().then(setPassports).catch((e) => setPErr(e.message));
     api.relay().then(setRelay).catch((e) => setRErr(e.message));
   }, []);
+
+  const handleIngest = async (file) => {
+    setUploading(true); setUploadErr(null); setUploadMsg(null);
+    try {
+      const res = await api.ingest(file);
+      const base = baseRef.current;
+      // The backend is stateless = base corpus + THIS doc. Rebuild from the base
+      // (replace, not accumulate) so the memory list, counts, and passports stay in
+      // sync on re-upload (a second upload replaces the first, like the backend).
+      if (base) {
+        setScenario({
+          ...base,
+          memory_items: [...base.memory_items, ...res.new_items],
+          counts: { items: base.counts.items + res.added, facts: res.passports.n_facts },
+        });
+      }
+      setPassports(res.passports);
+      setUploadMsg(res.added > 0
+        ? `+${res.added} items ingested → passports recomputed (replaces any previous upload)`
+        : "No usable text found in that file.");
+    } catch (e) { setUploadErr(e.message || "ingest failed"); }
+    finally { setUploading(false); }
+  };
 
   return (
     <div className="wrap">
@@ -258,7 +294,7 @@ export default function Home() {
 
       {tab === "dashboard" && (
         <div className="grid3">
-          <MemoryPane scenario={scenario} />
+          <MemoryPane scenario={scenario} onUpload={handleIngest} uploading={uploading} uploadErr={uploadErr} uploadMsg={uploadMsg} />
           <AgentsPane passports={passports} error={pErr} />
           <div className="panel">
             <h2>Token meter · live decision</h2>

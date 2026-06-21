@@ -27,4 +27,15 @@ export const api = {
   relay: () => get("/api/relay"),
   benchmark: () => post("/api/benchmark"),
   compress: (b) => post("/api/compress", b),
+  ingest: async (file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch(`${BASE}/api/ingest`, { method: "POST", body: fd });
+    if (!r.ok) {
+      let detail = "";
+      try { detail = (await r.json()).detail; } catch (_) {}
+      throw new Error(detail || `/api/ingest -> ${r.status}`);
+    }
+    return r.json();
+  },
 };

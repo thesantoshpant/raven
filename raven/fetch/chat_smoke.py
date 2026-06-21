@@ -58,6 +58,11 @@ def main():
     async def on_ack(ctx: Context, sender: str, msg: ChatAcknowledgement):
         pass
 
+    @client.on_interval(period=15.0)
+    async def watchdog(ctx: Context):
+        ctx.logger.error("CHAT SMOKE TIMEOUT (no reply within 15s)")
+        os._exit(1)
+
     client.include(cproto)
     bureau = Bureau()
     bureau.add(raven)

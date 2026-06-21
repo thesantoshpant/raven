@@ -19,7 +19,11 @@ from raven.web import services  # noqa: E402
 
 def main():
     print(f"Warming cache via {DEFAULT_MODEL} (live API calls; cached after the first run)...")
-    out = services.run_benchmark(AnthropicLLM(model=DEFAULT_MODEL))
+    try:
+        out = services.run_benchmark(AnthropicLLM(model=DEFAULT_MODEL))
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}\nSet ANTHROPIC_API_KEY (and ensure network) and retry.")
+        raise SystemExit(1)
     print(f"per-agent budget: {out['per_agent_budget']} tok")
     for cond, d in out["conditions"].items():
         miss = f" missed={d['missed']}" if d["missed"] else ""

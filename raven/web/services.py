@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import List, Optional
 
 from ..agents import aggregate, run_budget_agent, run_calendar_agent, run_restaurant_agent
@@ -70,11 +71,9 @@ def get_scenario() -> dict:
     }
 
 
-def role_passports(task: Optional[str] = None) -> dict:
-    """Per-role passports from the corpus (the memory -> agent edge), with the
+def _passports_payload(corpus: list, task: str) -> dict:
+    """Per-role passports over a given corpus (the memory -> agent edge), with the
     least-privilege view (what each agent does NOT see). No LLM."""
-    corpus, taskj, _ = _load()
-    task = task or _task_text(taskj)
     facts = ingest_corpus(corpus)
     by_id = {f.fact_id: f for f in facts}
     full_tokens = count_tokens(serialize_corpus(corpus), backend="fallback")
@@ -97,6 +96,28 @@ def role_passports(task: Optional[str] = None) -> dict:
             "est_usd_per_send": est_cost_usd(tok, in_frac=1.0),
         })
     return {"full_tokens": full_tokens, "n_facts": len(facts), "roles": out}
+
+
+def role_passports(task: Optional[str] = None) -> dict:
+    corpus, taskj, _ = _load()
+    return _passports_payload(corpus, task or _task_text(taskj))
+
+
+def ingest_document(file_bytes, filename: str) -> dict:
+    """M5: a PDF/doc -> memory items appended to the scenario, with passports recomputed
+    over the combined corpus. Stateless (each call re-reads the base corpus)."""
+    from ..ingest_docs import load_document
+
+    base = os.path.splitext(os.path.basename(filename or "upload"))[0]
+    src = re.sub(r"[^a-z0-9]+", "_", base.lower()).strip("_") or "upload"
+    new_items = load_document(file_bytes, filename, source=src)
+    corpus, taskj, _ = _load()
+    combined = corpus + new_items
+    return {
+        "added": len(new_items),
+        "new_items": new_items,
+        "passports": _passports_payload(combined, _task_text(taskj)),
+    }
 
 
 def compress(role: str, task: str, memory: str) -> dict:

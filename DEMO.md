@@ -4,8 +4,8 @@ A rehearsable, can't-fail script for judging. ~3 minutes.
 
 ## 0. Pre-flight (do this BEFORE you present)
 ```
-# terminal 1 — backend
-.venv\Scripts\python -m pip install -r requirements-web.txt
+# terminal 1 — backend (requirements-docs is needed for PDF/docx/html upload; .md/.txt work without it)
+.venv\Scripts\python -m pip install -r requirements-web.txt -r requirements-docs.txt
 .venv\Scripts\python -m uvicorn raven.web.api:app --port 8000
 
 # terminal 2 — warm the live cache so the on-stage benchmark is instant

@@ -22,7 +22,7 @@ Send a chat message in this format:
 ```
 role: budget
 task: plan a friday dinner
-memory: Maya is vegetarian. Keep dinners under $40. Always confirm before paying. The weather is nice. Concert tickets are $65.
+memory: Maya is vegetarian and eats no meat. Keep dinners under $40 this month. Always confirm before paying for anything. The weather has been lovely lately. We were chatting about a concert with $65 tickets. The campus library is open late. I spent $18.75 on notebooks yesterday.
 ```
 
 I reply with the compressed passport + the token count (raw vs compressed). `role` defaults
@@ -31,14 +31,16 @@ to `writer`; JSON (`{"role":..., "task":..., "memory":...}`) also works.
 ## Example reply
 ```
 RAVEN context passport for 'budget' (task: plan a friday dinner)
-Tokens: 31 tokens, saved 62% vs raw 82
+Tokens: 49 tokens, saved 40% vs raw 82
 
 # CONTEXT PASSPORT for budget_agent
+TASK: plan a friday dinner
 HARD CONSTRAINTS:
-- Keep dinners under $40.
+- Keep dinners under $40 this month.
 RISK FLAGS:
-- Always confirm before paying.
+- Always confirm before paying for anything.
 ```
+(Short inputs may not net-compress — the agent reports that honestly.)
 
 Built for the agentic web. Part of **RAVEN** — verified context passports across every edge
 of a multi-agent system (user memory → agent, and agent → agent).
