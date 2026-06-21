@@ -68,11 +68,11 @@ def test_extra_keep_types_force_keeps_a_learned_type():
     # passport; a learned guideline (extra_keep_types) must force-keep it.
     facts = [
         Fact("d1", "Maya is vegetarian.", "Maya is vegetarian.", "c", "dietary"),
-        Fact("g1", "Keep it under $40.", "Keep it under $40.", "c", "budget"),
+        Fact("g1", "Keep it under $40.", "Keep it under $40.", "c", "budget_limit"),
     ]
     task = "plan dinner with maya"
     without = build_passport(facts, task, "restaurant", top_k=1)
-    with_keep = build_passport(facts, task, "restaurant", top_k=1, extra_keep_types={"budget"})
+    with_keep = build_passport(facts, task, "restaurant", top_k=1, extra_keep_types={"budget_limit"})
     assert "g1" not in without.facts        # normally dropped (zero relevance, beyond top_k)
     assert "g1" in with_keep.facts          # force-kept by the learned guideline
 

@@ -7,7 +7,7 @@ exact-span guard (the constraints whose loss flips the decision).
 
 ROLES = {
     "restaurant": {
-        "types": {"dietary", "preference", "budget", "location"},
+        "types": {"dietary", "preference", "budget_limit", "location"},
         "keywords": [
             "restaurant", "food", "dinner", "cuisine", "vegetarian", "vegan",
             "loud", "quiet", "noise", "budget", "price", "near", "location", "menu",
@@ -21,15 +21,18 @@ ROLES = {
         ],
     },
     "budget": {  # the budget / payment agent
-        "types": {"budget", "permission"},
+        "types": {"budget_limit", "permission"},
         "keywords": [
             "budget", "price", "cost", "spend", "dollar", "confirm", "approve",
             "payment", "pay", "before", "permission",
         ],
     },
-    "writer": {
-        "types": {"preference", "other"},
-        "keywords": ["summary", "plan", "recommend", "prefer", "like"],
+    "writer": {  # the final summarizer: needs the decisions + constraints, not receipts
+        "types": {"dietary", "budget_limit", "availability", "permission", "preference", "location"},
+        "keywords": [
+            "summary", "plan", "recommend", "prefer", "like", "vegetarian", "budget",
+            "time", "confirm", "venue", "quiet",
+        ],
     },
 }
 
@@ -40,6 +43,6 @@ ROLE_ORDER = ["restaurant", "calendar", "budget", "writer"]
 CRITICAL_TYPES = {
     "restaurant": {"dietary"},
     "calendar": {"availability"},
-    "budget": {"budget", "permission"},
+    "budget": {"budget_limit", "permission"},
     "writer": set(),
 }

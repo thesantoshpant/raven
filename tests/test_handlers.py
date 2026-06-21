@@ -1,0 +1,49 @@
+"""Pure agent message logic (offline, no uagents/network)."""
+
+import json
+
+from raven.handlers import handle_compress_request
+
+
+def test_compress_request_for_budget_role():
+    text = (
+        "role: budget\ntask: plan a friday dinner\n"
+        "memory: Maya is vegetarian and eats no meat. Keep dinners under $40 this month. "
+        "Always confirm before paying for anything. The weather has been really nice lately. "
+        "We chatted about a concert with $65 tickets which is steep. The library is open late. "
+        "I spent $18.75 on notebooks yesterday. My phone screen is acting up again. "
+        "The group chat is arguing about a TV finale. I should water the plants and back up my laptop."
+    )
+    reply, stats = handle_compress_request(text)
+    assert stats["ok"] is True and stats["role"] == "budget"
+    assert stats["relayed_tokens"] < stats["raw_tokens"]  # realistic memory -> real compression
+    assert "$40" in reply and "confirm" in reply.lower()  # criticals kept
+    assert "$65" not in reply and "weather" not in reply.lower()  # noise dropped
+
+
+def test_compress_request_json_calendar():
+    text = json.dumps({
+        "role": "calendar", "task": "schedule",
+        "memory": "Lab runs until 5:30 on Friday. She's free after 7pm. Note about the weather.",
+    })
+    reply, stats = handle_compress_request(text)
+    assert stats["ok"] is True and stats["role"] == "calendar"
+    assert "5:30" in reply and "free" in reply.lower()  # both availability facts kept
+
+
+def test_compress_request_empty_memory_returns_help():
+    reply, stats = handle_compress_request("role: budget")
+    assert stats["ok"] is False
+    assert "memory" in reply.lower()
+
+
+def test_compress_request_tiny_input_makes_no_false_savings_claim():
+    reply, stats = handle_compress_request("role: budget\nmemory: Keep dinners under $40.")
+    assert stats["ok"] is True
+    if stats["saved_tokens"] <= 0:
+        assert "too small for net compression" in reply.lower()
+
+
+def test_unknown_role_defaults_to_writer():
+    reply, stats = handle_compress_request("role: wizard\nmemory: I like quiet cafes and tea.")
+    assert stats["ok"] is True and stats["role"] == "writer"

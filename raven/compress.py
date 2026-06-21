@@ -15,7 +15,7 @@ from .schemas import Fact, Passport
 from .tokens import count_tokens
 
 # Grouping of fact types into passport sections (for human-legible rendering).
-_HARD = {"dietary", "budget", "availability"}
+_HARD = {"dietary", "budget_limit", "availability"}
 _RISK = {"permission"}
 
 

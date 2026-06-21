@@ -1,0 +1,8 @@
+# OPTIONAL deps for the Fetch.ai/Agentverse/ASI:One layer + the Redis fact store.
+# NOT required by the core engine, the gate, M2, or the pytest suite (which stay
+# stdlib + offline). Install only to run raven/fetch/* or to use RedisFactStore.
+# Pinned to the verified API surface (uagents_core.contrib.protocols.chat,
+# publish_agent_details). Older uagents lack these and will ImportError/TypeError.
+uagents>=0.25,<0.26
+uagents-core>=0.4
+redis>=5

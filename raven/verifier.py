@@ -28,7 +28,7 @@ ROLE_PROBES = {
     "restaurant": [{"question": "Does Maya have a dietary restriction? If so, what?", "type": "dietary"}],
     "calendar": [{"question": "Is the user busy until a certain time on Friday?", "type": "availability"}],
     "budget": [
-        {"question": "What is the user's dinner budget limit?", "type": "budget"},
+        {"question": "What is the user's dinner budget limit?", "type": "budget_limit"},
         {"question": "Does the user require confirmation before paying?", "type": "permission"},
     ],
 }

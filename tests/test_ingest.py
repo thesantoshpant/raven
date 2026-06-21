@@ -25,7 +25,7 @@ def test_gold_constraints_are_present_and_typed():
         return [f for f in facts if substr.lower() in f.text.lower() and f.type == ftype]
 
     assert find("vegetarian", "dietary"), "missing buried vegetarian/dietary fact"
-    assert find("$40", "budget"), "missing buried budget fact"
+    assert find("$40", "budget_limit"), "missing buried budget-limit fact"
     assert find("5:30", "availability"), "missing buried lab/availability fact"
     assert find("confirm", "permission"), "missing buried confirm/permission fact"
     assert find("loud", "preference"), "missing buried loud/preference fact"

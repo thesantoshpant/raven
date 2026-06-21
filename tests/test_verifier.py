@@ -25,7 +25,7 @@ def _answerer(system, user):
 
 def _facts():
     return [
-        Fact("b1", "Keep dinners under $40.", "Keep dinners under $40.", "n1", "budget"),
+        Fact("b1", "Keep dinners under $40.", "Keep dinners under $40.", "n1", "budget_limit"),
         Fact("p1", "Always confirm before paying.", "Always confirm before paying.", "n2", "permission"),
     ]
 
