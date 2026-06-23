@@ -50,9 +50,12 @@ def test_memory_with_no_guard_types_does_not_crash():
     assert isinstance(chosen, list)  # no crash; guards simply absent
 
 
-def test_cap_is_respected_on_huge_memory():
-    _, chosen = _raven_select(DINNER_MEM * 5, "dinner friday maya budget pay vegetarian outdoor")
-    assert len(chosen) <= 10
+def test_selection_is_bounded_and_truncates_many_distinct_facts():
+    # 20 DISTINCT relevant sentences -> selection must drop some (not return all 20) and stay bounded.
+    mem = ". ".join(f"Option {i}: a quiet vegetarian place under ${30 + i} downtown" for i in range(20)) + "."
+    _, chosen = _raven_select(mem, "where should we eat dinner")
+    assert 1 <= len(chosen) <= 13     # bounded; neither empty nor everything
+    assert len(chosen) < 20           # truncation actually happened
 
 
 def test_dedup_no_repeated_fact_text():

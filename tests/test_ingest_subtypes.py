@@ -44,6 +44,19 @@ def test_per_person_price_is_not_a_budget_limit():
     assert classify("Keep dinners under $40.") == "budget_limit"  # a real cap still is
 
 
+def test_newline_and_bullet_lists_split_into_separate_facts():
+    from raven.ingest import split_sentences
+    lines = split_sentences("Maya is vegetarian\nKeep dinner under $40\n- Confirm before paying")
+    assert len(lines) == 3
+    assert "Maya is vegetarian" in lines
+    assert "Confirm before paying" in lines  # leading bullet stripped
+
+
+def test_cap_requires_a_preposition():
+    assert classify("Capped at $40.") == "budget_limit"
+    assert classify("We need a cap 5 minute break.") != "budget_limit"  # no prep -> not a money cap
+
+
 def test_24h_times_and_weekdays_are_availability():
     assert classify("Free Friday at 19:00.") == "availability"
     assert classify("Meeting from 14:00 to 16:00.") == "availability"

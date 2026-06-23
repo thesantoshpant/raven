@@ -106,7 +106,7 @@ RAVEN now runs as a real uAgent and compresses agent→agent handoffs.
   passport (a cap that mentions spending, e.g. "budget is $40 but I spent $60", stays a cap).
 
 The Fetch layer (`uagents`, `redis`) is **optional** (`requirements-fetch.txt`); the core, the
-gate, M2, and the **80+-test** offline suite stay stdlib + offline (no `uagents`/`fastapi`/`markitdown`/network; one fallback test lazily touches the `redis` client but never connects).
+gate, M2, and the **110+-test** offline suite stay stdlib + offline (no `uagents`/`fastapi`/`markitdown`/network; one fallback test lazily imports the `redis` client and makes a single refused loopback connect — no external network).
 
 ## Milestone 4 (done): the live demo UI
 A two-server app — a FastAPI backend (`raven/web/`) over the M1–M3 engine + a Next.js

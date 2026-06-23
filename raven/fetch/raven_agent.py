@@ -70,8 +70,11 @@ def build_agent(mailbox: bool = True, port: int = 8001):
 
     @protocol.on_message(ChatMessage)
     async def on_chat(ctx: Context, sender: str, msg: ChatMessage):
-        await ctx.send(sender, ChatAcknowledgement(
-            timestamp=datetime.now(timezone.utc), acknowledged_msg_id=msg.msg_id))
+        try:  # a failed ack must NOT skip the reply below (the "always reply" guarantee)
+            await ctx.send(sender, ChatAcknowledgement(
+                timestamp=datetime.now(timezone.utc), acknowledged_msg_id=msg.msg_id))
+        except Exception as exc:  # noqa: BLE001
+            ctx.logger.error(f"RAVEN ack failed: {exc}")
         try:  # never let an error hang the chat -- always reply + end the session
             reply, stats = handle_compress_request(_text_of(msg))
             ctx.logger.info(f"RAVEN compress -> {stats}")

@@ -243,12 +243,15 @@ def run_ab(llm: BaseLLM, prompt: str, memory_text: Optional[str] = None) -> dict
     raven = ask(raven_ctx)
     elapsed = round(time.perf_counter() - t0, 2)  # ~0s => served from disk cache; >0.5s => live
     raven["context"] = raven_ctx
-    saved = without["input_tokens"] - raven["input_tokens"]
+    # Floor at 0: on a tiny/garbage memory the passport's structure can exceed the raw text;
+    # the per-column token counts stay truthful, but we never show a negative "savings".
+    saved = max(0, without["input_tokens"] - raven["input_tokens"])
     pct = round(saved / without["input_tokens"] * 100, 1) if without["input_tokens"] else 0.0
+    unique_total = len({f.text for f in all_facts})  # multi-label emits same-text facts; count once
     trace = {
-        "total_facts": len(all_facts),
+        "total_facts": unique_total,
         "kept": [{"text": f.text, "type": f.type, "reason": r} for f, r in chosen],
-        "dropped": len(all_facts) - len(chosen),
+        "dropped": max(0, unique_total - len(chosen)),
     }
     return {"prompt": prompt, "without": without, "raven": raven, "saved_tokens": saved,
             "saved_pct": pct, "trace": trace, "elapsed_s": elapsed, "cached": elapsed < 0.5}

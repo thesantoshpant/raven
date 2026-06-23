@@ -24,11 +24,14 @@ _HELP = (
 
 _MAX_MEMORY_CHARS = 12_000  # cap pasted input so a huge blob can't block the agent loop
 _SEP = " |,\t\r\n"          # marker separators to strip from captured values
+# Markers are honored ONLY at an anchor -- start of the text, after a newline, or after a
+# '|'/',' separator -- so prose that merely mentions "memory:" / "task:" mid-sentence
+# ("just for your memory: ...") is NOT treated as a marker and is kept verbatim.
 _MENTION = re.compile(r"^\s*@\S+\s*")
-_ROLE = re.compile(r"\brole\b\s*[:=]?\s*([A-Za-z]+)", re.I)       # ':' optional; letters only; validated before use
-_TASK = re.compile(r"\btask\s*[:=]\s*(.+?)(?=\s*[|,]?\s*\bmemory\s*[:=]|$)", re.I | re.S)
-_MEMORY = re.compile(r"\bmemory\s*[:=]\s*(.+)$", re.I | re.S)
-_DANGLING = re.compile(r"(?i)\b(?:role|task|memory)\s*[:=]\s*$")   # a marker with no value left
+_ROLE = re.compile(r"(?:^|[|,])\s*role\b\s*[:=]?\s*([A-Za-z]+)", re.I | re.M)
+_TASK = re.compile(r"(?:^|[|,])\s*task\s*[:=]\s*(.+?)(?=[|,]|\bmemory\s*[:=]|$)", re.I | re.M | re.S)
+_MEMORY = re.compile(r"(?:^|[|,])\s*memory\s*[:=]\s*(.+)$", re.I | re.M | re.S)
+_DANGLING = re.compile(r"(?im)(?:^|[|,])\s*(?:role|task|memory)\s*[:=]\s*$")  # a marker with no value left
 
 
 def _parse(text: str) -> Tuple[str, str, str]:

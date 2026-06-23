@@ -35,7 +35,7 @@ def relay_handoff(prior_context: str, latest_message: str, role: str = "writer")
 
 
 @mcp.tool()
-def list_roles() -> list:
+def list_roles() -> list[str]:
     """List the recipient roles RAVEN can compress for (restaurant, calendar, budget, writer)."""
     return _logic.roles_list()
 

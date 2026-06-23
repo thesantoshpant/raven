@@ -12,7 +12,8 @@ from typing import List
 
 from .schemas import Fact
 
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+|\s*[\r\n]+\s*")  # split on sentence ends AND newlines
+_BULLET = "-*•‣◦ \t"                        # leading bullet chars to strip per line
 
 # Ordered: first match wins, so put the highest-signal constraint types first.
 # NOTE: `budget` is split into two subtypes so passports stay clean (M3):
@@ -29,7 +30,7 @@ _TYPE_RULES = [
     ("budget_limit", re.compile(
         r"(\bunder \$?\d+|\bbelow \$?\d+|\bno more than \$?\d+|\b(?:don'?t|do not|not|never) spend (?:over|more than)"
         r"|\bspend (?:no more than|less than|under|below|at most)|\bmax(?:imum)? \$?\d+"
-        r"|\bcap(?:ped)? (?:at|of|to)?\s*\$?\d|\bbudget (?:of|is|under|cap|limit|for|:)"
+        r"|\bcap(?:ped)? (?:at|of|to)\s*\$?\d|\bbudget (?:of|is|under|cap|limit|for|:)"
         r"|\bon a budget\b|\bdinner budget\b|\bkeep (?:it|dinner\w*|the bill|things?) (?:under|below|cheap|affordable|to)"
         r"|\bcheap\b|\baffordable\b)", re.I)),  # NOTE: "per person" is a price OBSERVATION, not a cap -> not budget_limit
     ("expense_receipt", re.compile(r"(\breceipt\b|\btotal:?\s*\$|\bspent\b|\bpaid\b|\bcharged?\b|\bbill\b|\bcost me\b|tickets? (?:are|were|cost)|\$\d+\.\d{2})", re.I)),
@@ -65,9 +66,15 @@ def classify_all(sentence: str) -> List[str]:
     return out or ["other"]
 
 
+def _clean(s: str) -> str:
+    return s.strip().lstrip(_BULLET).strip()
+
+
 def split_sentences(text: str) -> List[str]:
-    """Public sentence splitter (atomic-fact granularity). Drops <3 char fragments."""
-    return [s.strip() for s in _SENT_SPLIT.split(text or "") if len(s.strip()) >= 3]
+    """Public sentence splitter (atomic-fact granularity). Splits on sentence ends AND
+    newlines/bullets so a pasted bullet/line list becomes one fact per line. Drops <3 char
+    fragments."""
+    return [c for c in (_clean(s) for s in _SENT_SPLIT.split(text or "")) if len(c) >= 3]
 
 
 def ingest_corpus(items: List[dict]) -> List[Fact]:
@@ -80,10 +87,7 @@ def ingest_corpus(items: List[dict]) -> List[Fact]:
             continue
         src = item.get("id", "")
         ts = item.get("timestamp", "")
-        for raw in _SENT_SPLIT.split(text):
-            sent = raw.strip()
-            if len(sent) < 3:
-                continue
+        for sent in split_sentences(text):
             facts.append(
                 Fact(
                     fact_id=f"f{idx}",

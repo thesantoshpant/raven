@@ -54,7 +54,7 @@ Around the engine:
 - **Fetch.ai:** a uAgent (`uagents` + `uagents-core`) speaking the Chat Protocol, mailbox-connected to Agentverse, plus a local Bureau multi-agent demo.
 - **Measurement:** real Claude calls (Haiku 4.5) through a thin `AnthropicLLM` wrapper that reads the API's own `usage.input_tokens` — disk-cached so the stage demo is instant and free.
 - **Web:** a FastAPI backend + Next.js 14 / React frontend ("Editorial Minimal" design) with the live A/B, the animated pipeline, a token meter, the decision benchmark, and PDF/doc ingestion (`markitdown`).
-- **Rigor:** **108 offline tests** (2 skipped), with a strict invariant that the test suite imports no `uagents`/`fastapi`/`markitdown`/network — the core stays pure.
+- **Rigor:** **116 offline tests** (2 skipped), with a strict invariant that the test suite imports no `uagents`/`fastapi`/`markitdown`/`mcp`/network — the core stays pure.
 
 The savings number we show is literally:
 $$\text{saved}\% = \left(1 - \frac{T_{\text{RAVEN}}}{T_{\text{full}}}\right)\times 100$$
@@ -73,7 +73,7 @@ where $T$ are the model's **real** input tokens, not estimates.
 - A **live agent on Agentverse** that's genuinely useful infrastructure, not a toy — it makes *other* agents cheaper.
 - A **provable** demo: real token counts, side-by-side, with an animation that teaches the mechanism — and it survives **adversarial prompts** (it refused to bypass the "confirm before paying" and "no steakhouse" rules).
 - **Constraint-safety as a feature:** RAVEN keeps the rules a bloated full-memory model *drops*. We turned "lost in the middle" from a risk into our demo's punchline.
-- **80–90% token reduction with preserved decisions**, reproducible from a clean checkout, backed by 108 tests.
+- **80–90% token reduction with preserved decisions**, reproducible from a clean checkout, backed by 116 tests.
 - A design that's **explainable end-to-end** — every kept fact has a reason (guard vs. relevant).
 
 ## What we learned

@@ -93,6 +93,15 @@ def test_role_without_colon_still_parses():
     assert stats["role"] == "budget"
 
 
+def test_prose_with_memory_word_not_corrupted():
+    # "memory:" appears mid-prose -> it must NOT be treated as a marker; whole text is memory.
+    reply, stats = handle_compress_request(
+        "Just a note for your memory: keep dinners under $40 and always confirm before paying."
+    )
+    assert stats["role"] == "writer" and stats["facts"] >= 1
+    assert "$40" in reply
+
+
 def test_combined_sentence_does_not_yield_empty_budget_passport():
     # Regression: a single combined sentence used to classify as ONE type (dietary) and
     # leave the budget passport empty while still claiming success.

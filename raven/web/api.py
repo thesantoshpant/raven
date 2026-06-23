@@ -96,14 +96,15 @@ def ab(req: ABReq):
     now = time.monotonic()
     if now - _last_ab < _AB_COOLDOWN_S:
         raise HTTPException(status_code=429, detail="Rate-limited: A/B makes 2 live API calls; wait a moment.")
-    _last_ab = now
     if not req.prompt.strip():
         raise HTTPException(status_code=400, detail="Enter a prompt to send to both bots.")
     llm = AnthropicLLM(model=DEFAULT_MODEL)
     try:
-        return services.run_ab(llm, req.prompt, req.memory or None)
+        result = services.run_ab(llm, req.prompt, req.memory or None)
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=f"LLM error: {exc}")
+    _last_ab = time.monotonic()  # throttle only AFTER a successful billable call
+    return result
 
 
 @app.post("/api/benchmark")
@@ -113,10 +114,11 @@ def benchmark():
     now = time.monotonic()
     if now - _last_benchmark < _BENCH_COOLDOWN_S:
         raise HTTPException(status_code=429, detail="Rate-limited: the benchmark makes live API calls; wait a moment.")
-    _last_benchmark = now
     llm = AnthropicLLM(model=DEFAULT_MODEL)
     try:
-        return services.run_benchmark(llm)
+        result = services.run_benchmark(llm)
     except RuntimeError as exc:  # AnthropicLLM raises RuntimeError (key/HTTP/connection) -> clean 502
         raise HTTPException(status_code=502, detail=f"LLM error: {exc}")
+    _last_benchmark = time.monotonic()  # throttle only AFTER a successful billable call
+    return result
     # NOTE: any OTHER exception is a real backend bug -> let it 500 (visible, not disguised)

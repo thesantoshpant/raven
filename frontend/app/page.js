@@ -118,7 +118,7 @@ function Meter({ passports, error }) {
   const rawBroadcast = passports.full_tokens * n;
   const ravenTotal = passports.roles.reduce((a, r) => a + r.tokens, 0);
   const savedPct = rawBroadcast ? Math.round((1 - ravenTotal / rawBroadcast) * 100) : 0;
-  const ravenW = Math.max(6, Math.round((ravenTotal / rawBroadcast) * 100));
+  const ravenW = rawBroadcast ? Math.max(6, Math.round((ravenTotal / rawBroadcast) * 100)) : 6;
   return (
     <div className="meter">
       <div className="meter-row"><span>Raw — full memory to all {n} agents</span><span className="v">{rawBroadcast.toLocaleString()} tok</span></div>

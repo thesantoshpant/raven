@@ -50,6 +50,7 @@ Add the same `mcpServers` block to `~/.cursor/mcp.json`.
 ## Verify without a client
 ```bash
 python -m raven.mcp.smoke          # in-process: lists the 3 tools + runs a real compress_memory call
+pip install "mcp[cli]"             # (only needed for the Inspector below)
 mcp dev raven/mcp/server.py        # optional: opens the MCP Inspector
 ```
 

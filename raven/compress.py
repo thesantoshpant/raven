@@ -100,12 +100,13 @@ def render_passport(passport: Passport, facts_by_id: Dict[str, Fact]) -> str:
         fact = facts_by_id.get(fid)
         if fact is None:
             continue
+        span = fact.exact_span or fact.text   # verbatim source span (never a paraphrase)
         if fact.type in _HARD:
-            hard.append(fact.text)
+            hard.append(span)
         elif fact.type in _RISK:
-            risk.append(fact.text)
+            risk.append(span)
         else:
-            other.append(fact.text)
+            other.append(span)
 
     lines = [f"# CONTEXT PASSPORT for {passport.for_agent}", f"TASK: {passport.task}"]
     if hard:

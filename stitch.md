@@ -169,7 +169,7 @@ A single wide `surface` card.
   |---|---|---|---|---|
   | → restaurant | 2,758 | 0 | 245 | 91% |
   | → budget | 2,861 | 103 | 234 | 92% |
-  | → writer | 2,941 | 80 | 310 | 89% |
+  | → writer | 2,941 | 80 | 410 | 86% |
   | **TOTAL** | **8,560** | **183** | **889** | **90%** |
 - Two badges below: a `kept` pill "RAVEN keeps 'vegetarian' on 3/3 hops" and a `dropped` pill
   "last-message keeps it on only 1/3".
