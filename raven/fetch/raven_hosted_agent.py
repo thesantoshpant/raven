@@ -7,8 +7,11 @@ Paste this whole file into an Agentverse "Blank Agent", press Start, and chat wi
 
 It replies with a tiny, recipient-aware context passport + the token savings. No API key needed
 (pure deterministic compression). Source + tests: https://github.com/thesantoshpant/raven
+
+NOTE: intentionally NO `from __future__ import annotations` -- Agentverse's hosted sandbox execs
+this file without registering it in sys.modules, which breaks @dataclass's stringized-annotation
+(KW_ONLY) lookup. Real annotations avoid that lookup entirely.
 """
-from __future__ import annotations
 
 # ---------------- inlined: raven/schemas.py ----------------
 """Core data structures. Stdlib dataclasses (no pydantic) so the core has zero
